@@ -53,7 +53,7 @@ PyMODINIT_FUNC PyInit_deeptools_intervals(void) {
     PyObject *res;
     errno = 0;
 
-    if(PyType_Ready(&GTFFile) < 0) return NULL;
+    if(PyType_Ready(&pyGTFtree) < 0) return NULL;
     res = PyModule_Create(&deeptools_intervalsmodule);
     if(!res) return NULL;
 
