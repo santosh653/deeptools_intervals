@@ -1,0 +1,2 @@
+include README.md *.c *.h setup.py
+exclude deeptools_intervals.egg-info/*
