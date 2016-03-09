@@ -20,13 +20,13 @@ else :
 
 additional_libs = [sysconfig.get_config_var("LIBDIR"), sysconfig.get_config_var("LIBPL")]
 
-module1 = Extension('deeptools_intervals',
+module1 = Extension('deeptoolsintervals',
                     sources = srcs,
                     libraries = libs,
                     library_dirs = additional_libs, 
                     include_dirs = [sysconfig.get_config_var("INCLUDEPY")])
 
-setup(name = 'deeptools_intervals',
+setup(name = 'deeptoolsintervals',
        version = '0.1.0',
        description = 'A python module creating/accessing GTF-based interval trees with associated meta-data',
        author = "Devon P. Ryan",

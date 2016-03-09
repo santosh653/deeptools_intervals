@@ -1,7 +1,7 @@
 #include <Python.h>
 #include <assert.h>
 #include <inttypes.h>
-#include "deeptools_intervals.h"
+#include "deeptoolsintervals.h"
 
 static void pyGTFDealloc(pyGTFtree_t *self) {
     if(self->t) destroyGTFtree(self->t);
@@ -49,12 +49,12 @@ uint32_t Numeric2Uint(PyObject *obj) {
 }
 
 #if PY_MAJOR_VERSION >= 3
-PyMODINIT_FUNC PyInit_deeptools_intervals(void) {
+PyMODINIT_FUNC PyInit_deeptoolsintervals(void) {
     PyObject *res;
     errno = 0;
 
     if(PyType_Ready(&pyGTFtree) < 0) return NULL;
-    res = PyModule_Create(&deeptools_intervalsmodule);
+    res = PyModule_Create(&deeptoolsintervalsmodule);
     if(!res) return NULL;
 
     Py_INCREF(&pyGTFtree);
@@ -64,9 +64,9 @@ PyMODINIT_FUNC PyInit_deeptools_intervals(void) {
 }
 #else
 //Python2 initialization
-PyMODINIT_FUNC initdeeptools_intervals(void) {
+PyMODINIT_FUNC initdeeptoolsintervals(void) {
     errno = 0; //Sometimes libpython2.7.so is missing some links...
     if(PyType_Ready(&pyGTFtree) < 0) return;
-    Py_InitModule3("deeptools_intervals", deeptools_intervalsMethods, "A module for handling GTF files for deepTools");
+    Py_InitModule3("deeptoolsintervals", deeptoolsintervalsMethods, "A module for handling GTF files for deepTools");
 }
 #endif

@@ -9,23 +9,23 @@ typedef struct {
 
 static void pyGTFDealloc(pyGTFtree_t *self);
 
-static PyMethodDef deeptools_intervalsMethods[] = {
+static PyMethodDef deeptoolsintervalsMethods[] = {
     {NULL, NULL, 0, NULL}
 };
 
 #if PY_MAJOR_VERSION >= 3
-struct deeptools_intervalsmodule_state {
+struct deeptoolsintervalsmodule_state {
     PyObject *error;
 };
 
-#define GETSTATE(m) ((struct deeptools_intervalsmodule_state*)PyModule_GetState(m))
+#define GETSTATE(m) ((struct deeptoolsintervalsmodule_state*)PyModule_GetState(m))
 
-static PyModuleDef deeptools_intervalsmodule = {
+static PyModuleDef deeptoolsintervalsmodule = {
     PyModuleDef_HEAD_INIT,
     "deeptools_intervals",
     "A python module creating/accessing GTF-based interval trees with associated meta-data",
     -1,
-    deeptools_intervalsMethods,
+    deeptoolsintervalsMethods,
     NULL, NULL, NULL, NULL
 };
 #endif
@@ -39,7 +39,7 @@ static PyTypeObject pyGTFtree = {
     PyObject_HEAD_INIT(NULL)
     0,              /*ob_size*/
 #endif
-    "deeptools_intervals.pyGTFtree", /*tp_name*/
+    "deeptoolsintervals.pyGTFtree", /*tp_name*/
     sizeof(pyGTFtree_t),      /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)pyGTFDealloc,  /*tp_dealloc*/
@@ -69,7 +69,7 @@ static PyTypeObject pyGTFtree = {
     0,                         /*tp_weaklistoffset*/
     0,                         /*tp_iter*/
     0,                         /*tp_iternext*/
-    deeptools_intervalsMethods, /*tp_methods*/
+    deeptoolsintervalsMethods, /*tp_methods*/
     0,                         /*tp_members*/
     0,                         /*tp_getset*/
     0,                         /*tp_base*/
