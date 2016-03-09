@@ -7,6 +7,26 @@ typedef struct {
     GTFtree *t;
 } pyGTFtree_t;
 
+/* 
+  parseGTF
+  parseBED
+  findOverlaps
+
+  parseGTF needs to accept the following
+    * A file name
+    * Two (optional) values (for filtering) in the python interface:
+      * "transcript"
+      * "exon"
+
+  parseBED needs to intelligently accept 12 columns
+
+  parse* need to handle group labels/multiple files
+    * A # line for BED files
+    * A deepTools_group field for GTF files
+
+  The python interface to findOverlaps should probably return a tuple.
+*/
+
 static void pyGTFDealloc(pyGTFtree_t *self);
 
 static PyMethodDef deeptoolsintervalsMethods[] = {
