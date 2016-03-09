@@ -57,7 +57,7 @@ PyMODINIT_FUNC PyInit_deeptools_intervals(void) {
     res = PyModule_Create(&deeptools_intervalsmodule);
     if(!res) return NULL;
 
-    Py_INCREF(&GTFFile);
+    Py_INCREF(&pyGTFtree);
     PyModule_AddObject(res, "pyGTFtree", (PyObject *) &pyGTFtree);
 
     return res;
