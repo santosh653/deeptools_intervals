@@ -1,4 +1,4 @@
-For the love of \<insert diety\> don't use this repository! It only exists to more conveniently create a python interface to libGTF for deepTools!
+For the love of \<insert deity\> don't use this repository! It only exists to more conveniently create a python interface to libGTF for deepTools!
 ================================================================================================================================================
 
 For those curious, deepTools needs a new interval tree backend that support metadata associated with each interval. I previously made such a thing, called libGTF. Consequently, I'm just working on a (A) a python front-end for that and (B) some modifications specific to deepTools (namely, every interval needs an associated `deepTools_group` tag and exon bounds will be a new attribute associated with transcripts).
