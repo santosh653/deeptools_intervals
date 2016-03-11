@@ -1,32 +1,10 @@
-matrix:
-  include:
-    - os: "linux"
-      language: "python"
-      python: "2.6"
-    - os: "linux"
-      language: "python"
-      python: "2.7"
-    - os: "linux"
-      language: "python"
-      python: "3.3"
-    - os: "linux"
-      language: "python"
-      python: "3.4"
-    - os: "linux"
-      language: "python"
-      python: "3.5"
-    - os: "osx"
-      language: "c"
-      env: TRAVIS_PYTHON_VERSION="2.7"
-    - os: "osx"
-      language: "c"
-      env: TRAVIS_PYTHON_VERSION="3.5"
-
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" && "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then curl https://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh -o miniconda.sh ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" && "$TRAVIS_PYTHON_VERSION" == "3.5" ]]; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -o miniconda.sh ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then bash miniconda.sh -b -p $HOME/miniconda && export PATH="$HOME/miniconda/bin:$PATH" && hash -r && conda config --set always_yes yes --set changeps1 no &&  conda update -q conda && conda install pcre ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then conda info -a ; fi
+language: "python"
+python:
+  - "2.6"
+  - "2.7"
+  - "3.3"
+  - "3.4"
+  - "3.5"
 
 install: python ./setup.py install
 script: cd ~/ && python -c "from deeptoolsintervals import parse"
