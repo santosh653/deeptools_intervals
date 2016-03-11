@@ -29,4 +29,4 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then conda info -a ; fi
 
 install: python ./setup.py install
-script: python -c "from deeptoolsintervals import parse"
+script: cd ~/ && python -c "from deeptoolsintervals import parse"
