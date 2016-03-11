@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <float.h>
 #include "gtf.h"
 
 //Nodes for the interval tree
@@ -57,8 +58,6 @@ void destroyGTFtree(GTFtree *t) {
 
     destroyHT(t->htChroms);
     destroyHT(t->htSources);
-//    destroyHT(t->htGenes);
-//    destroyHT(t->htTranscripts);
     destroyHT(t->htFeatures);
     destroyHT(t->htAttributes);
 
@@ -84,49 +83,88 @@ void addChrom(GTFtree *t) {
     assert(t->chroms[t->n_targets-1]);
 }
 
-void addGTFentry(GTFtree *t, GTFline *l) {
-    int32_t IDchrom, IDfeature, IDsource;
-    assert(t->balanced==0); //Should just switch to insertGTFentry(), which remains to be written
 
-    //Chromosome
-    if(!strExistsHT(t->htChroms, l->chrom.s)) {
+//Returns NULL on error
+static Attribute *makeAttribute(GTFtree *t, char *value) {
+    int32_t idx;
+    Attribute *a = malloc(sizeof(Attribute));
+    if(!a) return NULL;
+
+    if(!strExistsHT(t->htAttributes, "transcript_id")) {
+        idx = addHTelement(t->htAttributes, "transcript_id");
+    } else {
+        idx = str2valHT(t->htAttributes, "transcript_id");
+    }
+    a->key = idx;
+    if(!strExistsHT(t->htAttributes, value)) {
+        idx = addHTelement(t->htAttributes, value);
+    } else {
+        idx = str2valHT(t->htAttributes, value);
+    }
+    a->val = idx;
+
+    return a;
+}
+
+/* This currently hard-codes the following:
+    feature
+    source
+    frame
+    score
+    all attributes (most are skipped)
+
+    returns 1 on error
+*/
+int addGTFentry(GTFtree *t, char *chrom, uint32_t start, uint32_t end, uint8_t strand, char *transcriptID, uint32_t labelIDX) {
+    int32_t IDchrom, IDfeature, IDsource;
+    char feature[] = "transcript", source[] = "deepTools";
+    uint8_t frame = 3;
+    double score = DBL_MAX;
+    GTFentry *e = NULL;
+    Attribute *a = NULL;
+    Attribute **attribs = malloc(sizeof(Attribute *));
+    if(!*attribs) return 1;
+
+    //Get the chromosome ID
+    if(!strExistsHT(t->htChroms, chrom)) {
         addChrom(t);
-        IDchrom = addHTelement(t->htChroms, l->chrom.s);
+        IDchrom = addHTelement(t->htChroms, chrom);
     } else {
-        IDchrom = str2valHT(t->htChroms, l->chrom.s);
+        IDchrom = str2valHT(t->htChroms, chrom);
     }
-    //Source
-    if(!strExistsHT(t->htSources, l->source.s)) {
-        IDsource = addHTelement(t->htSources, l->source.s);
+
+    //Handle the hard-coded stuff, which in case they're ever requested
+    if(!strExistsHT(t->htSources, source)) {
+        IDsource = addHTelement(t->htSources, source);
     } else {
-        IDsource = str2valHT(t->htSources, l->source.s);
+        IDsource = str2valHT(t->htSources, source);
     }
-    //feature
-    if(!strExistsHT(t->htFeatures, l->feature.s)) {
-        IDfeature = addHTelement(t->htFeatures, l->feature.s);
+    if(!strExistsHT(t->htFeatures, feature)) {
+        IDfeature = addHTelement(t->htFeatures, feature);
     } else {
-        IDfeature = str2valHT(t->htFeatures, l->feature.s);
+        IDfeature = str2valHT(t->htFeatures, feature);
     }
+
+    //Create the attribute
+    a = makeAttribute(t, transcriptID);
+    if(!a) goto error;
 
     //Initialize the entry
-    GTFentry *e = malloc(sizeof(GTFentry));
-    assert(e);
+    e = malloc(sizeof(GTFentry));
+    if(!e) goto error;
     e->right = NULL;
 
-    //Copy over the values
     e->chrom = IDchrom;
     e->feature = IDfeature;
     e->source = IDsource;
-    e->start = l->start;
-    e->end = l->end;
-    e->strand = l->strand;
-    e->frame = l->frame;
-    e->score = l->score;
-    e->nAttributes = l->nAttributes;
-    e->attrib = l->attrib;
-    assert(l->end > l->start);
-    l->nAttributes = 0;
-    l->attrib = NULL;
+    e->start = start;
+    e->end = end;
+    e->strand = strand;
+    e->frame = frame;
+    e->score = score;
+    e->nAttributes = 1;
+    e->attrib = attribs;
+    e->labelIdx = labelIDX;
 
     if(t->chroms[IDchrom]->tree) {
         e->left = ((GTFentry*) t->chroms[IDchrom]->tree)->left;
@@ -138,7 +176,13 @@ void addGTFentry(GTFtree *t, GTFline *l) {
     }
     t->chroms[IDchrom]->n_entries++;
 
-    GTFline_reset(l);
+    return 0;
+
+error:
+    if(attribs) free(attribs);
+    if(a) free(a);
+    if(e) free(e);
+    return 1;
 }
 
 /*******************************************************************************
@@ -312,39 +356,6 @@ uint32_t getCenter(GTFentry *ends) {
     return slow->end-1;
 }
 
-/*
-GTFentry *getRStarts(GTFentry *starts, uint32_t pos) {
-    GTFentry *o, *tmp;
-    if(!starts->right) return NULL;
-    o = starts;
-    while(o->right) {
-        if(o->right->start>=pos) {
-            tmp = o;
-            o = o->right;
-            tmp->right = NULL;
-            return o;
-        }
-        o = o->right;
-    }
-    return NULL;
-}
-GTFentry *getLEnds(GTFentry *ends, uint32_t pos) {
-    GTFentry *o, *tmp;
-    if(!ends->left) return NULL;
-    o = ends;
-    while(o->left) {
-        if(o->left->end < pos) {
-            tmp = o;
-            o = o->left;
-            tmp->left = NULL;
-            return o;
-        }
-        o = o->left;
-    }
-    return NULL;
-}
-*/
-
 GTFentry *getMembers(GTFentry **members, GTFentry **rStarts, GTFentry *starts, uint32_t pos) {
     GTFentry *tmp, *newStarts = NULL;
     GTFentry *last = NULL, *lastMember = NULL;
@@ -415,51 +426,6 @@ GTFentry *getRMembers(GTFentry **members, GTFentry **lEnds, GTFentry *ends, uint
     return newEnds;
 }
 
-/*
-GTFentry *removeMembers(GTFentry *ends, uint32_t pos) {
-    GTFentry *newEnds = NULL, *lastEnd = NULL;
-    GTFentry *members = NULL, *lastMember = NULL;
-
-    while(ends) {
-        if(ends->start > pos) {
-            if(!newEnds) {
-                newEnds = ends;
-                lastEnd = newEnds;
-            } else {
-                lastEnd->left = ends;
-                lastEnd = lastEnd->left;
-            }
-        } else {
-            if(!members) {
-                members = ends;
-                lastMember = members;
-            } else {
-                lastMember->left = ends;
-            }
-            lastMember = ends;
-        }
-        ends = ends->left;
-        if(lastEnd) lastEnd->left = NULL;
-        if(lastMember) lastMember->left = NULL;
-    }
-    if(lastMember) lastMember->left = members; //Make it circular so resorting works
-    return newEnds;
-}
-
-static GTFentry *fixEnds(GTFentry *starts) {
-    GTFentry *curr = starts->right;
-    GTFentry *prev = starts;
-    while(curr) {
-        curr->left = prev;
-        prev = curr;
-        curr = curr->right;
-    }
-    starts->left = NULL;
-    if(curr) return curr;
-    return prev;
-}
-*/
-
 GTFnode *makeIntervalTree(GTFentry *starts, GTFentry *ends) {
     uint32_t center = getCenter(ends);//, nMembers;
     GTFentry *rStarts = NULL; //getRStarts(starts, center);
@@ -497,69 +463,6 @@ void sortGTF(GTFtree *t) {
         t->chroms[i]->tree = (void*) makeIntervalTree((GTFentry*) t->chroms[i]->tree, ends);
     }
     t->balanced = 1;
-}
-
-/*******************************************************************************
-*
-* GTFline-specific functions
-*
-*******************************************************************************/
-void GTFline_reset(GTFline *l) {
-    if(l->chrom.s) {
-        l->chrom.l = 0;
-        l->chrom.s[0] = '\0';
-    }
-    if(l->feature.s) {
-        l->feature.l = 0;
-        l->chrom.s[0] = '\0';
-    }
-    if(l->source.s) {
-        l->source.l = 0;
-        l->source.s[0] = '\0';
-    }
-/*
-    if(l->gene.s) {
-        l->gene.l = 0;
-        l->gene.s[0] = '\0';
-    }
-    if(l->transcript.s) {
-        l->transcript.l = 0;
-        l->transcript.s[0] = '\0';
-    }
-*/
-    l->strand = 3;
-    l->frame = 3;
-    l->nAttributes = 0;
-    l->attrib = NULL;
-}
-
-void destroyGTFline(GTFline *l) {
-    if(l->chrom.s) free(l->chrom.s);
-    if(l->feature.s) free(l->feature.s);
-    if(l->source.s) free(l->source.s);
-    destroyAttributes(l);
-    if(l->attrib) free(l->attrib);
-    free(l);
-}
-
-GTFline *initGTFline() {
-    GTFline *o = calloc(1, sizeof(GTFline));
-    if(!o) return NULL;
-
-    o->strand = 3;
-    o->frame = 3;
-    return o;
-}
-
-/*******************************************************************************
-*
-* Accessors
-*
-*******************************************************************************/
-//This should be a define
-char *GTFgetGeneID(GTFtree *t, GTFentry *e) {
-//    return val2strHT(t->htGenes, e->gene_id);
-    return getAttribute(t, e, "gene_id");
 }
 
 /*******************************************************************************

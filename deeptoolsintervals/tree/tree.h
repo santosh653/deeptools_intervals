@@ -8,44 +8,44 @@ typedef struct {
 } pyGTFtree_t;
 
 /* 
-  parseGTF
-  parseBED
   findOverlaps
-
-  parseGTF needs to accept the following
-    * A file name
-    * Two (optional) values (for filtering) in the python interface:
-      * "transcript"
-      * "exon"
-
-  parseBED needs to intelligently accept 12 columns
-
-  parse* need to handle group labels/multiple files
-    * A # line for BED files
-    * A deepTools_group field for GTF files
+  addEntry
 
   The python interface to findOverlaps should probably return a tuple.
+
+  Remove all asserts and ensure that the new return values are honoured.
+
+  Profile the code with a test to eliminate unneeded cruft.
 */
 
+static PyObject *pyAddEntry(pyGTFtree_t *self, PyObject *args);
+static PyObject *pyVine2Tree(pyGTFtree_t *self, PyObject *args);
+static PyObject *pyPrintGTFtree(pyGTFtree_t *self, PyObject *args);
 static void pyGTFDealloc(pyGTFtree_t *self);
 
-static PyMethodDef deeptoolsintervalsMethods[] = {
+static PyMethodDef treeMethods[] = {
+    {"addEntry", (PyCFunction) pyAddEntry, METH_VARARGS,
+"Some documentation for pyAddEntry\n"},
+    {"finish", (PyCFunction) pyVine2Tree, METH_VARARGS,
+"This must be called after ALL entries from ALL files have been added.\n"},
+    {"print", (PyCFunction) pyPrintGTFtree, METH_VARARGS,
+"Prints a text representation in dot format.\n"},
     {NULL, NULL, 0, NULL}
 };
 
 #if PY_MAJOR_VERSION >= 3
-struct deeptoolsintervalsmodule_state {
+struct treemodule_state {
     PyObject *error;
 };
 
-#define GETSTATE(m) ((struct deeptoolsintervalsmodule_state*)PyModule_GetState(m))
+#define GETSTATE(m) ((struct treemodule_state*)PyModule_GetState(m))
 
-static PyModuleDef deeptoolsintervalsmodule = {
+static PyModuleDef treemodule = {
     PyModuleDef_HEAD_INIT,
-    "deeptools_intervals",
+    "tree",
     "A python module creating/accessing GTF-based interval trees with associated meta-data",
     -1,
-    deeptoolsintervalsMethods,
+    treeMethods,
     NULL, NULL, NULL, NULL
 };
 #endif
@@ -59,8 +59,8 @@ static PyTypeObject pyGTFtree = {
     PyObject_HEAD_INIT(NULL)
     0,              /*ob_size*/
 #endif
-    "deeptoolsintervals.pyGTFtree", /*tp_name*/
-    sizeof(pyGTFtree_t),      /*tp_basicsize*/
+    "tree.pyGTFtree",          /*tp_name*/
+    sizeof(pyGTFtree_t),       /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)pyGTFDealloc,  /*tp_dealloc*/
     0,                         /*tp_print*/
@@ -89,7 +89,7 @@ static PyTypeObject pyGTFtree = {
     0,                         /*tp_weaklistoffset*/
     0,                         /*tp_iter*/
     0,                         /*tp_iternext*/
-    deeptoolsintervalsMethods, /*tp_methods*/
+    treeMethods,               /*tp_methods*/
     0,                         /*tp_members*/
     0,                         /*tp_getset*/
     0,                         /*tp_base*/

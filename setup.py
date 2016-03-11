@@ -5,7 +5,7 @@ import subprocess
 import glob
 import sys
 
-srcs = [x for x in glob.glob("*.c")]
+srcs = [x for x in glob.glob("deeptoolsintervals/tree/*.c")]
 
 libs=["z"]
 if sysconfig.get_config_vars('BLDLIBRARY') is not None:
@@ -20,19 +20,7 @@ else :
 
 additional_libs = [sysconfig.get_config_var("LIBDIR"), sysconfig.get_config_var("LIBPL")]
 
-try:
-    foo, _ = subprocess.Popen(['pcre-config', '--libs'], stdout=subprocess.PIPE).communicate()
-except:
-    sys.exit("Either libpcre isn't installed, it didn't come with pcre-config, or pcre-config isn't in your $PATH. This must be corrected before installing deeptoolsinterals!\n")
-
-foo = foo.strip().split()
-for v in foo:
-    if(v[0:2] == "-L") :
-        additional_libs.append(v[2:])
-    elif(v[0:2] == "-l") :
-        libs.append(v[2:])
-
-module1 = Extension('deeptoolsintervals',
+module1 = Extension('deeptoolsintervals.tree',
                     sources = srcs,
                     libraries = libs,
                     library_dirs = additional_libs, 
@@ -63,5 +51,6 @@ setup(name = 'deeptoolsintervals',
                      "Operating System :: MacOS",
                      "Topic :: Scientific/Engineering"],
        packages = find_packages(),
+       zip_safe = False,
        include_package_data=True,
        ext_modules = [module1])

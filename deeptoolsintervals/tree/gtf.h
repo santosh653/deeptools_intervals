@@ -49,6 +49,7 @@ typedef struct GTFentry {
     uint8_t strand:4, frame:4;
     int32_t gene_id;
     int32_t transcript_id;
+    uint32_t labelIdx;
     int nAttributes;
     Attribute **attrib;
     struct GTFentry *left, *right;
@@ -132,24 +133,11 @@ typedef int (*COMPARE_FUNC)(GTFentry *, GTFentry *);
 //gtf.c
 GTFtree * initGTFtree(void);
 void destroyGTFtree(GTFtree *t);
-void addGTFentry(GTFtree *t, GTFline *l);
 void sortGTF(GTFtree *o);
 void printGTFtree(GTFtree *t);
 void printGTFvineStart(GTFentry *e, const char *chrom, const char *str);
 void printGTFvineStartR(GTFentry *e, const char *chrom, const char *str);
-void GTFline_reset(GTFline *l);
-void destroyGTFline(GTFline *l);
-GTFline *initGTFline(void);
-char *GTFgetGeneID(GTFtree *t, GTFentry *e);
-
-//parseBED
-GTFtree *BED2Tree(char *fname, FILTER_FUNC f);
-void GTFEntry2BED(kstring_t *ks, GTFtree *t, GTFentry *e, int ncols);
-
-//parseGTF
-//N.B., the FILTER_FUNC can be NULL, in which case no filtering is performed!
-GTFtree *GTF2Tree(char *fname, FILTER_FUNC f);
-void GTFEntry2GTF(kstring_t *ks, GTFtree *t, GTFentry *e);
+int addGTFentry(GTFtree *t, char *chrom, uint32_t start, uint32_t end, uint8_t strand, char *transcriptID, uint32_t labelIDX);
 
 //hashTable.c
 hashTable *initHT(uint64_t size);
@@ -188,13 +176,3 @@ uint32_t us_cnt(uniqueSet *us, int32_t i);
 char *us_val(uniqueSet *us, int32_t i);
 //Driver functions
 overlapSet * findOverlaps(overlapSet *os, GTFtree *t, char *chrom, uint32_t start, uint32_t end, int strand, int matchType, int strandType, int keepOS, FILTER_ENTRY_FUNC ffunc);
-
-//misc.c
-char *nextField(char *str);
-//The following MUST be called before addGTFAttributes() or addAttribute()!
-int initGTFre(void);
-void addAttribute(GTFline *l, GTFtree *t, char *key, char *value);
-void destroyAttributes(GTFline *l);
-int addGTFAttributes(GTFline *l, GTFtree *t, char *str);
-//Call this after the above are done
-void destroyGTFre(void);
