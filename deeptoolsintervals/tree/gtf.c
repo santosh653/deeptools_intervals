@@ -30,8 +30,11 @@ GTFtree * initGTFtree() {
 
 void destroyGTFentry(GTFentry *e) {
     int32_t i;
+    if(!e) return;
     if(e->right) destroyGTFentry(e->right);
-    for(i=0; i<e->nAttributes; i++) free(e->attrib[i]);
+    for(i=0; i<e->nAttributes; i++) {
+        if(e->attrib[i]) free(e->attrib[i]);
+    }
     if(e->attrib) free(e->attrib);
     free(e);
 }
@@ -122,8 +125,8 @@ int addGTFentry(GTFtree *t, char *chrom, uint32_t start, uint32_t end, uint8_t s
     double score = DBL_MAX;
     GTFentry *e = NULL;
     Attribute *a = NULL;
-    Attribute **attribs = malloc(sizeof(Attribute *));
-    if(!*attribs) return 1;
+    Attribute **attribs = calloc(1, sizeof(Attribute *));
+    if(!attribs) return 1;
 
     //Get the chromosome ID
     if(!strExistsHT(t->htChroms, chrom)) {
@@ -148,6 +151,7 @@ int addGTFentry(GTFtree *t, char *chrom, uint32_t start, uint32_t end, uint8_t s
     //Create the attribute
     a = makeAttribute(t, transcriptID);
     if(!a) goto error;
+    attribs[0] = a;
 
     //Initialize the entry
     e = malloc(sizeof(GTFentry));

@@ -18,17 +18,20 @@ typedef struct {
   Profile the code with a test to eliminate unneeded cruft.
 */
 
+static PyObject *pyGTFinit(PyObject *self, PyObject *args);
 static PyObject *pyAddEntry(pyGTFtree_t *self, PyObject *args);
 static PyObject *pyVine2Tree(pyGTFtree_t *self, PyObject *args);
 static PyObject *pyPrintGTFtree(pyGTFtree_t *self, PyObject *args);
 static void pyGTFDealloc(pyGTFtree_t *self);
 
 static PyMethodDef treeMethods[] = {
+    {"initTree", (PyCFunction) pyGTFinit, METH_VARARGS,
+"Initialize the tree\n"},
     {"addEntry", (PyCFunction) pyAddEntry, METH_VARARGS,
 "Some documentation for pyAddEntry\n"},
     {"finish", (PyCFunction) pyVine2Tree, METH_VARARGS,
 "This must be called after ALL entries from ALL files have been added.\n"},
-    {"print", (PyCFunction) pyPrintGTFtree, METH_VARARGS,
+    {"printGTFtree", (PyCFunction) pyPrintGTFtree, METH_VARARGS,
 "Prints a text representation in dot format.\n"},
     {NULL, NULL, 0, NULL}
 };
@@ -59,8 +62,8 @@ static PyTypeObject pyGTFtree = {
     PyObject_HEAD_INIT(NULL)
     0,              /*ob_size*/
 #endif
-    "tree.pyGTFtree",          /*tp_name*/
-    sizeof(pyGTFtree_t),       /*tp_basicsize*/
+    "pyGTFtree",          /*tp_name*/
+    sizeof(pyGTFtree_t),           /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)pyGTFDealloc,  /*tp_dealloc*/
     0,                         /*tp_print*/

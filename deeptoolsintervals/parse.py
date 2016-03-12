@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-# from deeptoolsintervals.backend import addGTFentry, addEXONentry, findOverlaps
-from deeptoolsintervals.tree import addEntry
+from deeptoolsintervals import tree
 import re
 import sys
+import gzip
 
-# TODO I'd like to avoid making the first two user configurable, but...
+gene_id_regex = re.compile('(?:gene_id (?:\"([ \w\d"\-]+)\"|([ \w\d"\-]+))[;|\r|\n])')
 transcript_id_regex = re.compile('(?:transcript_id (?:\"([ \w\d"\-]+)\"|([ \w\d"\-]+))[;|\r|\n])')
 deepTools_group_regex = re.compile('(?:deepTools_group (?:\"([ \w\d"\-]+)\"|([ \w\d"\-]+))[;|\r|\n])')
 
@@ -27,9 +27,9 @@ def seemsLikeGTF(cols):
         if cols[5] != '.':
             float(cols[5])
         cols[6] in ['+', '-', '.']
-        int(cols[7]) in [0, 1, 2]
+        if cols[7] != '.':
+            int(cols[7]) in [0, 1, 2]
         assert(gene_id_regex.match(cols[8]) != None)
-        assert(transcript_id_regex.match(cols[8]) != None)
         return True
     except:
         return False
@@ -74,12 +74,12 @@ def parseExonBounds(start, end, n, sizes, offsets):
     return [(x, y) for x, y in zip(starts, ends)]
 
 
-class GTFtree(object):
+class GTF(object):
     """
     A class to hold an interval tree and its associated functions
     """
 
-    def __init__(self, fnames, keepExons=False, labelList=None):
+    def __init__(self):
         """
         fnames:	The file name(s)
         exonID:	The exon feature designator (only for GTF)
@@ -95,12 +95,12 @@ class GTFtree(object):
         self.exonID = "exon"
         self.transcriptID = "transcript"
         self.keepExons = False
-        self.chroms = {}
+        self.chroms = []
         self.exons = {}
         self.labels = []
-        self.labelList = labelList
+        self.labelList = []
         self.transcriptIDduplicated = []
-        self.tree = None
+        self.tree = tree.initTree()
         self.labelIdx = 0
 
     def firstNonComment(self, fp):
@@ -124,7 +124,7 @@ class GTFtree(object):
             return 'BED3'
         elif len(cols) == 6:
             return 'BED3'
-        elif len(cols) == 9 and seemLikeGTF(cols):
+        elif len(cols) == 9 and seemsLikeGTF(cols):
             return 'GTF'
         elif len(cols) == 12:
             return 'BED12'
@@ -140,7 +140,7 @@ class GTFtree(object):
         Return the chromosome name, possibly munged to match one already found in the chromosome dictionary
         """
         if chrom in self.chroms:
-            return self.chroms
+            return chrom
 
         # chrM <-> MT and chr1 <-> 1 conversions
         if chrom == "MT" and "chrM" in self.chroms:
@@ -182,7 +182,7 @@ class GTFtree(object):
             sys.stderr.write("Skipping {}, an entry by this name already exists!\n".format(name))
             return False
         else:
-            addEntry(self.mungeChromosome(cols[0]), int(cols[1]), int(cols[2]), name, strand, self.labelIdx)
+            self.tree.addEntry(self.mungeChromosome(cols[0]), int(cols[1]), int(cols[2]), name, strand, self.labelIdx)
             if ncols != 12 or self.keepExons == False:
                 self.exons[name] = [(int(cols[1]), int(cols[2]))]
             else:
@@ -191,7 +191,7 @@ class GTFtree(object):
 
     def parseBED(self, fp, line, ncols=3):
         """
-        parse a BED3 file. The default group label is the file name.
+        parse a BED file. The default group label is the file name.
         """
         groupLabelsFound = 0
         groupEntries = 0
@@ -243,16 +243,20 @@ class GTFtree(object):
             sys.stderr.write("Warning: Invalid start in '{}', skipping\n".format("\t".join(cols)))
             return
 
-        m = deepTools_group_regex.search(cols[9])
-        if m:
-            label = m.group(0)
+        if len(cols) < 9:
+            sys.stderr.write("Warning: non-GTF line encountered! {}\n".format("\t".join(cols)))
+            return
 
-        m = transcriptID_regex.search(cols[9])
+        m = deepTools_group_regex.search(cols[8])
+        if m:
+            label = m.group(1)
+
+        m = transcript_id_regex.search(cols[8])
         if not m:
              sys.stderr.write("Warning: {} is malformed!\n".format("\t".join(cols)))
              return
 
-        name = m.group(0)
+        name = m.group(1)
         if name in self.exons.keys():
             sys.stderr.write("Warning: {} occurs more than once! Only using the first instance.\n".format(name))
             self.transcriptIDduplicated.append(name)
@@ -273,7 +277,8 @@ class GTFtree(object):
             self.labels.append(label)
         self.labelIdx = self.labels.index(label)
 
-        addEntry(self.mungeChromosome(cols[0]), int(cols[3]) - 1, int(cols[4]), name, strand, self.labelIdx)
+        chrom = self.mungeChromosome(cols[0])
+        self.tree.addEntry(chrom, long(cols[3]) - 1, long(cols[4]), name, long(strand), long(self.labelIdx))
 
         # Exon bounds placeholder
         self.exons[name] = []
@@ -309,18 +314,18 @@ class GTFtree(object):
 
         # Handle the first line
         cols = line.split("\t")
-        if cols[2].tolower() == self.transcriptID:
+        if cols[2].lower() == self.transcriptID:
             self.parseGTFtranscript(cols, file_label)
-        elif cols[2].tolower() == self.exonID:
+        elif cols[2].lower() == self.exonID:
             self.parseGTFexon(cols)
 
         # Handle the remaining lines
         for line in fp:
             if not line.startswith('#'):
                 cols = line.split("\t")
-                if cols[2].tolower() == self.transcriptID:
+                if cols[2].lower() == self.transcriptID:
                     self.parseGTFtranscript(cols, file_label)
-                elif cols[2].tolower() == self.exonID and keepExons == True:
+                elif cols[2].lower() == self.exonID and self.keepExons == True:
                     self.parseGTFexon(cols)
 
         # Reset self.labelIdx
@@ -348,13 +353,13 @@ class GTFtree(object):
 
         # Load the files
         for fname in fnames:
-            fp = open(fname, "r")
+            fp = gzip.open(fname, "rb")
             line = self.firstNonComment(fp)
             if line is None:
                 # This will only ever happen if a file is empty or just has a header/comment
                 continue
 
-            ftype = self.inferType(fp)
+            ftype = self.inferType(fp, line)
             if ftype == 'GTF':
                 self.parseGTF(fp, line)
             elif ftype == 'BED':
@@ -370,4 +375,7 @@ class GTFtree(object):
         # TODO Do the number of groups match the number of labels?
         # Replace labels if there's a labelList
 
-        # TODO vine -> tree
+        # vine -> tree
+        self.tree.finish()
+
+   # findOverlaps()

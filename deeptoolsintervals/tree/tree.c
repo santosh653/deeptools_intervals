@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <inttypes.h>
 #include "tree.h"
+#include <assert.h>
 
 static void pyGTFDealloc(pyGTFtree_t *self) {
     if(self->t) destroyGTFtree(self->t);
@@ -48,14 +49,34 @@ uint32_t Numeric2Uint(PyObject *obj) {
     return (uint32_t) l;
 }
 
+static PyObject *pyGTFinit(PyObject *self, PyObject *args) {
+    GTFtree *t = NULL;
+    pyGTFtree_t *pt;
+
+    t = initGTFtree();
+    if(!t) return NULL;
+
+    pt = PyObject_New(pyGTFtree_t, &pyGTFtree);
+    if(!pt) goto error;
+
+    pt->t = t;
+    return (PyObject*) pt;
+
+error:
+    if(t) destroyGTFtree(t);
+    PyErr_SetString(PyExc_RuntimeError, "Received an error during tree initialization!");
+    return NULL;
+}
+
 static PyObject *pyAddEntry(pyGTFtree_t *self, PyObject *args) {
     GTFtree *t = self->t;
     char *chrom = NULL, *name = NULL;
     uint32_t start, end, labelIdx;
     uint8_t strand;
-    long lstrand, lstart, lend, llabelIdx;
+    unsigned long lstrand, lstart, lend, llabelIdx;
 
     if(!(PyArg_ParseTuple(args, "skkskk", &chrom, &lstart, &lend, &name, &lstrand, &llabelIdx))) {
+        return NULL;
         PyErr_SetString(PyExc_RuntimeError, "pyAddEntry received an invalid or missing argument!");
         return NULL;
     }
