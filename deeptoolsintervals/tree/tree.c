@@ -140,6 +140,12 @@ static PyObject *pyCountEntries(pyGTFtree_t *self, PyObject *args) {
     return out;
 }
 
+static PyObject *pyIsTree(pyGTFtree_t *self, PyObject *args) {
+    GTFtree *t = self->t;
+    if(t->balanced) Py_RETURN_TRUE;
+    Py_RETURN_FALSE;
+}
+
 static PyObject *pyFindOverlaps(pyGTFtree_t *self, PyObject *args) {
     GTFtree *t = self->t;
     char *chrom = NULL, *name = 0, *transcript_id;
@@ -165,7 +171,10 @@ static PyObject *pyFindOverlaps(pyGTFtree_t *self, PyObject *args) {
     os = findOverlaps(NULL, t, chrom, start, end, strand, matchType, strandType, 0, NULL);
 
     // Did we receive an error?
-    if(!os) return NULL;
+    if(!os) {
+        PyErr_SetString(PyExc_RuntimeError, "findOverlaps returned NULL!");
+        return NULL;
+    }
 
     if(!os->l) {
         os_destroy(os);
@@ -192,9 +201,12 @@ static PyObject *pyFindOverlaps(pyGTFtree_t *self, PyObject *args) {
         otuple = NULL;
     }
 
+    return olist;
+
 error:
     if(otuple) Py_DECREF(otuple);
     if(olist) Py_DECREF(olist);
+    PyErr_SetString(PyExc_RuntimeError, "findOverlaps received an error!");
     return NULL;
 }
 

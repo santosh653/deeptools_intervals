@@ -77,6 +77,19 @@ def parseExonBounds(start, end, n, sizes, offsets):
 class GTF(object):
     """
     A class to hold an interval tree and its associated functions
+
+    >>> from deeptoolsintervals import parse
+    >>> from os.path import dirname
+    >>> gtf = parse.GTF()
+    >>> gtf.parse("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), keepExons=True, labels=["foo"])
+    >>> gtf.findOverlaps("1", 1, 20000)
+    [(11868, 14409, 'foo', [(11868, 12227), (12612, 12721), (13220, 14409)]), (12009, 13670, 'foo', [(12009, 12057), (12178, 12227), (12612, 12697), (12974, 13052), (13220, 13374), (13452, 13670)]), (14403, 29570, 'foo', [(14403, 14501), (15004, 15038), (15795, 15947), (16606, 16765), (16857, 17055), (17232, 17368), (17605, 17742), (17914, 18061), (18267, 18366), (24737, 24891), (29533, 29570)]), (17368, 17436, 'foo', [(17368, 17436)])]
+    >>> gtf = parse.GTF()
+    >>> gtf.parse("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), labels=["foo"])
+    >>> gtf.findOverlaps("1", 1, 20000)
+    [(11868, 14409, 'foo', [(11868, 14409)]), (12009, 13670, 'foo', [(12009, 13670)]), (14403, 29570, 'foo', [(14403, 29570)]), (17368, 17436, 'foo', [(17368, 17436)])]
+
+    TODO Include a find overlaps test
     """
 
     def __init__(self):
@@ -88,7 +101,6 @@ class GTF(object):
         ftype:	The (current) inferred file type
         chroms:	A dictionary of chromosomes that have been found. This is only needed in case someone uses multiple files with different chromosome names
         exons:	A dictionary with transcript ID as the key and exonic bounds as the value. We'll see if this is quick enough
-        labelList: The input labels, if they exist
         tree: The pyGTFtree object is held here
         """
         self.fnames = []
@@ -98,7 +110,6 @@ class GTF(object):
         self.chroms = []
         self.exons = {}
         self.labels = []
-        self.labelList = []
         self.transcriptIDduplicated = []
         self.tree = tree.initTree()
         self.labelIdx = 0
@@ -253,14 +264,14 @@ class GTF(object):
 
         m = deepTools_group_regex.search(cols[8])
         if m:
-            label = m.group(1)
+            label = m.groups()[0]
 
         m = transcript_id_regex.search(cols[8])
         if not m:
              sys.stderr.write("Warning: {} is malformed!\n".format("\t".join(cols)))
              return
 
-        name = m.group(1)
+        name = m.groups()[0]
         if name in self.exons.keys():
             sys.stderr.write("Warning: {} occurs more than once! Only using the first instance.\n".format(name))
             self.transcriptIDduplicated.append(name)
@@ -295,13 +306,13 @@ class GTF(object):
             sys.stderr.write("Warning: Invalid start in '{}', skipping\n".format("\t".join(cols)))
             return
 
-        m = transcriptID_regex.search(cols[9])
+        m = transcript_id_regex.search(cols[8])
         if not m:
             sys.stderr.write("Warning: {} is malformed!\n".format("\t".join(cols)))
             return
 
-        name = m.group(0)
-        if name in self.transcriptIDduplicated.keys():
+        name = m.groups()[0]
+        if name in self.transcriptIDduplicated:
             return
         if name not in self.exons.keys():
             self.exons[name] = []
@@ -336,7 +347,7 @@ class GTF(object):
         # Reset self.labelIdx
         self.labelIdx = len(self.labels) - 1
 
-    def parse(self, fnames, exonID="exon", transcriptID="transcript", keepExons=False, labelList=[]):
+    def parse(self, fnames, exonID="exon", transcriptID="transcript", keepExons=False, labels=[]):
         """
         Driver function to actually parse files. The steps are as follows:
 
@@ -352,8 +363,11 @@ class GTF(object):
         self.transcriptID = transcriptID
         self.keepExons = keepExons
 
-        if labelList != []:
+        if labels != []:
             self.already_input_labels = True
+
+        if not isinstance(fnames, list):
+            fnames = [fnames]
 
         # Load the files
         for fname in fnames:
@@ -379,11 +393,11 @@ class GTF(object):
             raise RuntimeError("None of the input BED/GTF files had valid regions")
 
         # Replace labels
-        if len(labelList) > 0:
-            if len(labelList) != len(self.labelList):
+        if len(labels) > 0:
+            if len(labels) != len(self.labels):
                 raise RuntimeError("The number of labels found does not match the number input!")
             else:
-                self.labelList = labelList
+                self.labels = labels
 
         # vine -> tree
         self.tree.finish()
@@ -435,15 +449,15 @@ class GTF(object):
         else:
             strand = 0
 
-        overlaps = self.tree.findOverlaps(chrom, start, end, strand, matchType, strandType)
+        overlaps = self.tree.findOverlaps(chrom, start, end, strand, matchType, strandType, "transcript_id")
         if not overlaps:
             return None
 
         for i, o in enumerate(overlaps):
-            overlaps[i][3] = self.labelList[o[3]]
-            if o[2] not in self.exons.keys():
-                overlaps[i][4] = [(o[0], o[1])]
+            if o[2] not in self.exons.keys() or len(self.exons[o[2]]) == 0:
+                exons = [(o[0], o[1])]
             else:
-                overlaps[i][4] = self.exons[o[2]]
+                exons = sorted(self.exons[o[2]])
+            overlaps[i] = (o[0], o[1], self.labels[o[3]], exons)
 
         return overlaps

@@ -24,6 +24,7 @@ static PyObject *pyVine2Tree(pyGTFtree_t *self, PyObject *args);
 static PyObject *pyPrintGTFtree(pyGTFtree_t *self, PyObject *args);
 static PyObject *pyCountEntries(pyGTFtree_t *self, PyObject *args);
 static PyObject *pyFindOverlaps(pyGTFtree_t *self, PyObject *args);
+static PyObject *pyIsTree(pyGTFtree_t *self, PyObject *args);
 static void pyGTFDealloc(pyGTFtree_t *self);
 
 static PyMethodDef treeMethods[] = {
@@ -37,6 +38,8 @@ static PyMethodDef treeMethods[] = {
 "Prints a text representation in dot format.\n"},
     {"countEntries", (PyCFunction) pyCountEntries, METH_VARARGS,
 "Count the number of entries in a GTFtree\n"},
+    {"isTree", (PyCFunction) pyCountEntries, METH_VARARGS,
+"Return True if the object is a tree\n"},
     {"findOverlaps", (PyCFunction) pyFindOverlaps, METH_VARARGS,
 "Find overlapping intervals\n"},
     {NULL, NULL, 0, NULL}
