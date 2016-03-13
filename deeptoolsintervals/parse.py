@@ -104,10 +104,10 @@ class GTF(object):
         self.labelIdx = 0
 
     def firstNonComment(self, fp):
-        line = fp.next()
+        line = fp.readline().decode('utf-8')
         try:
             while line.startswith("#") or line.startswith('track') or line.startswith('browser'):
-                line = fp.next()
+                line = fp.readline().decode('utf-8')
         except:
             sys.stderr.write("Warning, {} was empty\n".format(fp.name))
             return None
@@ -135,7 +135,7 @@ class GTF(object):
             sys.stderr.write("Warning, {} has an abnormal format. Assuming BED12 format.\n".format(fp.name))
             return 'BED12'
 
-    def mungeChromosome(self, chrom):
+    def mungeChromosome(self, chrom, append=True):
         """
         Return the chromosome name, possibly munged to match one already found in the chromosome dictionary
         """
@@ -152,11 +152,14 @@ class GTF(object):
         elif "chr" + chrom in self.chroms:
             chrom = "chr" + chrom
 
-        self.chroms.append(chrom)
+        if append:
+            self.chroms.append(chrom)
+        else:
+            return None
 
         return chrom
 
-    def parseBEDCore(self, line, ncols):
+    def parseBEDcore(self, line, ncols):
         """
         Returns True if the entry was added, otherwise False
         """
@@ -207,6 +210,7 @@ class GTF(object):
 
         # iterate over the remaining lines
         for line in fp:
+            line = line.decode('utf-8')
             if line.startswith("#"):
                 # If there was a previous group AND it had no entries then remove it
                 if groupLabelsFound > 0:
@@ -278,7 +282,7 @@ class GTF(object):
         self.labelIdx = self.labels.index(label)
 
         chrom = self.mungeChromosome(cols[0])
-        self.tree.addEntry(chrom, long(cols[3]) - 1, long(cols[4]), name, long(strand), long(self.labelIdx))
+        self.tree.addEntry(chrom, int(cols[3]) - 1, int(cols[4]), name, strand, self.labelIdx)
 
         # Exon bounds placeholder
         self.exons[name] = []
@@ -321,6 +325,7 @@ class GTF(object):
 
         # Handle the remaining lines
         for line in fp:
+            line = line.decode('utf-8')
             if not line.startswith('#'):
                 cols = line.split("\t")
                 if cols[2].lower() == self.transcriptID:
@@ -346,7 +351,6 @@ class GTF(object):
         self.exonID = exonID
         self.transcriptID = transcriptID
         self.keepExons = keepExons
-        self.labels = labelList
 
         if labelList != []:
             self.already_input_labels = True
@@ -370,12 +374,76 @@ class GTF(object):
                 self.parseBED(fp, line, 12)
             fp.close()
 
-        # TODO Sanity check
-        # TODO Are there entries?
-        # TODO Do the number of groups match the number of labels?
-        # Replace labels if there's a labelList
+        # Sanity check
+        if self.tree.countEntries() == 0:
+            raise RuntimeError("None of the input BED/GTF files had valid regions")
+
+        # Replace labels
+        if len(labelList) > 0:
+            if len(labelList) != len(self.labelList):
+                raise RuntimeError("The number of labels found does not match the number input!")
+            else:
+                self.labelList = labelList
 
         # vine -> tree
         self.tree.finish()
 
-   # findOverlaps()
+    # findOverlaps()
+    def findOverlaps(self, chrom, start, end, strand=".", matchType=0, strandType=0):
+        """
+        Given a chromosome and start/end coordinates with an optional strand,
+        return a list of tuples comprised of:
+
+         * start
+         * end
+         * name
+         * label
+         * [(exon start, exon end), ...]
+
+        If there are no overlaps, return None. This function allows stranded
+        searching!
+
+        The non-obvious options are defined in gtf.h:
+          matchType:  0, GTF_MATCH_ANY
+                      1, GTF_MATCH_EXACT
+                      2, GTF_MATCH_CONTAIN
+                      3, GTF_MATCH_WITHIN
+                      4, GTF_MATCH_START
+                      5, GTF_MATCH_END
+
+          strandType: 0, GTF_IGNORE_STRAND
+                      1, GTF_SAME_STRAND
+                      2, GTF_OPPOSITE_STRAND
+                      3, GTF_EXACT_SAME_STRAND
+        """
+        chrom = self.mungeChromosome(chrom, append=False)
+        if not chrom:
+            return None
+
+        # Ensure that this is a tree and has entries, otherwise
+        if self.tree.countEntries() == 0:
+            return None
+
+        if not self.tree.isTree():
+            raise RuntimeError('The GTFtree is actually a vine! There must have been an error during creation (this shouldn\'t happen)...')
+
+        # Convert the strand to a number
+        if strand == '+':
+            strand = 1
+        elif strand == '-':
+            strand = 2
+        else:
+            strand = 0
+
+        overlaps = self.tree.findOverlaps(chrom, start, end, strand, matchType, strandType)
+        if not overlaps:
+            return None
+
+        for i, o in enumerate(overlaps):
+            overlaps[i][3] = self.labelList[o[3]]
+            if o[2] not in self.exons.keys():
+                overlaps[i][4] = [(o[0], o[1])]
+            else:
+                overlaps[i][4] = self.exons[o[2]]
+
+        return overlaps

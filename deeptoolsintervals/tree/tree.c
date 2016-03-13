@@ -76,7 +76,6 @@ static PyObject *pyAddEntry(pyGTFtree_t *self, PyObject *args) {
     unsigned long lstrand, lstart, lend, llabelIdx;
 
     if(!(PyArg_ParseTuple(args, "skkskk", &chrom, &lstart, &lend, &name, &lstrand, &llabelIdx))) {
-        return NULL;
         PyErr_SetString(PyExc_RuntimeError, "pyAddEntry received an invalid or missing argument!");
         return NULL;
     }
@@ -123,6 +122,80 @@ static PyObject *pyPrintGTFtree(pyGTFtree_t *self, PyObject *args) {
 
     Py_INCREF(Py_None);
     return Py_None;
+}
+
+static PyObject *pyCountEntries(pyGTFtree_t *self, PyObject *args) {
+    GTFtree *t = self->t;
+    uint32_t nEntries = 0;
+    unsigned long lnEntries = 0;
+    int32_t i;
+    PyObject *out = NULL;
+
+    for(i=0; i<t->n_targets; i++) {
+        nEntries += t->chroms[i]->n_entries;
+    }
+    lnEntries = (unsigned long) nEntries;
+    out = PyLong_FromUnsignedLong(lnEntries);
+
+    return out;
+}
+
+static PyObject *pyFindOverlaps(pyGTFtree_t *self, PyObject *args) {
+    GTFtree *t = self->t;
+    char *chrom = NULL, *name = 0, *transcript_id;
+    int32_t i;
+    uint32_t start, end;
+    int strand, strandType, matchType;
+    unsigned long lstrand, lstart, lend, lmatchType, lstrandType, llabelIdx;
+    overlapSet *os = NULL;
+    PyObject *olist = NULL, *otuple = NULL, *olong = NULL;
+
+    if(!(PyArg_ParseTuple(args, "skkkkks", &chrom, &lstart, &lend, &lstrand, &lmatchType, &lstrandType, &transcript_id))) {
+        PyErr_SetString(PyExc_RuntimeError, "pyFindOverlaps received an invalid or missing argument!");
+        return NULL;
+    }
+
+    //I'm assuming that this is never called outside of the module
+    strandType = (int) lstrandType;
+    strand = (int) lstrand;
+    matchType = (int) matchType;
+    start = (uint32_t) lstart;
+    end = (uint32_t) lend;
+
+    os = findOverlaps(NULL, t, chrom, start, end, strand, matchType, strandType, 0, NULL);
+
+    // Did we receive an error?
+    if(!os) return NULL;
+
+    if(!os->l) {
+        os_destroy(os);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
+    // Convert the overlapSet to a list of tuples
+    olist = PyList_New(os->l);
+    if(!olist) goto error;
+    for(i=0; i<os->l; i++) {
+        // Make the tuple
+        otuple = PyTuple_New(4);
+        if(!otuple) goto error;
+        lstart = (unsigned long) os->overlaps[i]->start;
+        lend = (unsigned long) os->overlaps[i]->end;
+        name = getAttribute(t, os->overlaps[i], transcript_id);
+        llabelIdx = (unsigned long) os->overlaps[i]->labelIdx;
+        otuple = Py_BuildValue("(kksk)", lstart, lend, name, llabelIdx);
+        if(!otuple) goto error;
+
+        // Add the tuple
+        if(PyList_SetItem(olist, i, otuple)) goto error;
+        otuple = NULL;
+    }
+
+error:
+    if(otuple) Py_DECREF(otuple);
+    if(olist) Py_DECREF(olist);
+    return NULL;
 }
 
 #if PY_MAJOR_VERSION >= 3

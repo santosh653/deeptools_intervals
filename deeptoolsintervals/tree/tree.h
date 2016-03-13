@@ -22,6 +22,8 @@ static PyObject *pyGTFinit(PyObject *self, PyObject *args);
 static PyObject *pyAddEntry(pyGTFtree_t *self, PyObject *args);
 static PyObject *pyVine2Tree(pyGTFtree_t *self, PyObject *args);
 static PyObject *pyPrintGTFtree(pyGTFtree_t *self, PyObject *args);
+static PyObject *pyCountEntries(pyGTFtree_t *self, PyObject *args);
+static PyObject *pyFindOverlaps(pyGTFtree_t *self, PyObject *args);
 static void pyGTFDealloc(pyGTFtree_t *self);
 
 static PyMethodDef treeMethods[] = {
@@ -33,6 +35,10 @@ static PyMethodDef treeMethods[] = {
 "This must be called after ALL entries from ALL files have been added.\n"},
     {"printGTFtree", (PyCFunction) pyPrintGTFtree, METH_VARARGS,
 "Prints a text representation in dot format.\n"},
+    {"countEntries", (PyCFunction) pyCountEntries, METH_VARARGS,
+"Count the number of entries in a GTFtree\n"},
+    {"findOverlaps", (PyCFunction) pyFindOverlaps, METH_VARARGS,
+"Find overlapping intervals\n"},
     {NULL, NULL, 0, NULL}
 };
 
