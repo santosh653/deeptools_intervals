@@ -10,6 +10,16 @@ import bz2
 # TODO: test groups and multiple files GTF files.
 
 
+def getNext(fp):
+    """
+    This is a wrapper around readline(), which needs to be decoded in python2 but not python3
+    """
+    if sys.version_info[0] > 2:
+        return fp.readline()
+    else:
+        return fp.readline().decode('utf-8')
+
+
 def seemsLikeGTF(cols, regex):
     """
     Does a line look like it could be from a GTF file? Column contents must be:
@@ -80,7 +90,7 @@ def openPossiblyCompressed(fname):
     """
     A wrapper to open gzip/bzip/uncompressed files
     """
-    with open(fname) as f:
+    with open(fname, "rb") as f:
         first3 = f.read(3)
     if first3 == "\x1f\x8b\x08":
         return gzip.open(fname, "rb")
@@ -96,19 +106,19 @@ class GTF(object):
 
     >>> from deeptoolsintervals import parse
     >>> from os.path import dirname
-    >>> gtf = parse.GTF("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), keepExons=True, labels=["foo"])
+    >>> gtf = parse.GTF("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), keepExons=True)
     >>> gtf.findOverlaps("1", 1, 20000)
-    [(11868, 14409, 'ENST00000456328', 'foo', [(11868, 12227), (12612, 12721), (13220, 14409)]), (12009, 13670, 'ENST00000450305', 'foo', [(12009, 12057), (12178, 12227), (12612, 12697), (12974, 13052), (13220, 13374), (13452, 13670)]), (14403, 29570, 'ENST00000488147', 'foo', [(14403, 14501), (15004, 15038), (15795, 15947), (16606, 16765), (16857, 17055), (17232, 17368), (17605, 17742), (17914, 18061), (18267, 18366), (24737, 24891), (29533, 29570)]), (17368, 17436, 'ENST00000619216', 'foo', [(17368, 17436)])]
-    >>> gtf = parse.GTF("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), labels=["foo"])
+    [(11868, 14409, 'ENST00000456328', u'group 1', [(11868, 12227), (12612, 12721), (13220, 14409)]), (12009, 13670, 'ENST00000450305', u'group 1', [(12009, 12057), (12178, 12227), (12612, 12697), (12974, 13052), (13220, 13374), (13452, 13670)]), (14403, 29570, 'ENST00000488147', u'group 1', [(14403, 14501), (15004, 15038), (15795, 15947), (16606, 16765), (16857, 17055), (17232, 17368), (17605, 17742), (17914, 18061), (18267, 18366), (24737, 24891), (29533, 29570)]), (17368, 17436, 'ENST00000619216', u'group 2', [(17368, 17436)])]
+    >>> gtf = parse.GTF("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)))
     >>> gtf.findOverlaps("1", 1, 20000)
-    [(11868, 14409, 'ENST00000456328', 'foo', [(11868, 14409)]), (12009, 13670, 'ENST00000450305', 'foo', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', 'foo', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', 'foo', [(17368, 17436)])]
+    [(11868, 14409, 'ENST00000456328', u'group 1', [(11868, 14409)]), (12009, 13670, 'ENST00000450305', u'group 1', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', u'group 1', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', u'group 2', [(17368, 17436)])]
     """
 
     def firstNonComment(self, fp):
-        line = fp.readline().decode('utf-8')
+        line = getNext(fp)
         try:
             while line.startswith("#") or line.startswith('track') or line.startswith('browser'):
-                line = fp.readline().decode('utf-8')
+                line = getNext(fp)
         except:
             sys.stderr.write("Warning, {} was empty\n".format(fp.name))
             return None
@@ -224,7 +234,9 @@ class GTF(object):
 
         # iterate over the remaining lines
         for line in fp:
-            line = line.decode('utf-8').strip()
+            if sys.version_info[0] == 2:
+                line = line.decode('utf-8')
+            line = line.strip()
             if line.startswith("#"):
                 # If there was a previous group AND it had no entries then remove it
                 if groupLabelsFound > 0:
@@ -339,7 +351,8 @@ class GTF(object):
 
         # Handle the remaining lines
         for line in fp:
-            line = line.decode('utf-8')
+            if sys.version_info[0] == 2:
+                line = line.decode('utf-8')
             if not line.startswith('#'):
                 cols = line.split("\t")
                 if cols[2].lower() == self.transcriptID:
