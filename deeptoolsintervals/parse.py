@@ -76,11 +76,11 @@ def parseExonBounds(start, end, n, sizes, offsets):
         starts = [start + int(x) for x in offsets]
         ends = [start + int(x) + int(y) for x, y in zip(offsets, sizes)]
     except:
-        sys.stderr.write("Warning: Received an invalid exon offset ({}) or size ({}), using the entry bounds instead ({}-{})\n".format(offsets, sizes, start, end))
+        sys.stderr.write("Warning: Received an invalid exon offset ({0}) or size ({1}), using the entry bounds instead ({2}-{3})\n".format(offsets, sizes, start, end))
         return [(start, end)]
 
     if len(offsets) < n or len(sizes) < n:
-        sys.stderr.write("Warning: There were too few exon start/end offsets ({}) or sizes ({}), using the entry bounds instead ({}-{})\n".format(offsets, sizes, start, end))
+        sys.stderr.write("Warning: There were too few exon start/end offsets ({0}) or sizes ({1}), using the entry bounds instead ({2}-{3})\n".format(offsets, sizes, start, end))
         return [(start, end)]
 
     return [(x, y) for x, y in zip(starts, ends)]
@@ -120,18 +120,18 @@ class GTF(object):
             while line.startswith("#") or line.startswith('track') or line.startswith('browser'):
                 line = getNext(fp)
         except:
-            sys.stderr.write("Warning, {} was empty\n".format(fp.name))
+            sys.stderr.write("Warning, {0} was empty\n".format(fp.name))
             return None
         return line
 
     def inferType(self, fp, line):
         cols = line.split("\t")
         if len(cols) < 3:
-            raise RuntimeError('{} does not seem to be a recognized file type!'.format(fp.name))
+            raise RuntimeError('{0} does not seem to be a recognized file type!'.format(fp.name))
         elif len(cols) == 3:
             return 'BED3'
         elif len(cols) < 6:
-            sys.stderr.write("Warning, {} has an abnormal number of fields. Assuming BED3 format.\n".format(fp.name))
+            sys.stderr.write("Warning, {0} has an abnormal number of fields. Assuming BED3 format.\n".format(fp.name))
             return 'BED3'
         elif len(cols) == 6:
             return 'BED3'
@@ -140,10 +140,10 @@ class GTF(object):
         elif len(cols) == 12:
             return 'BED12'
         elif len(cols) < 12:
-            sys.stderr.write("Warning, {} has an abnormal format. Assuming BED6 format.\n".format(fp.name))
+            sys.stderr.write("Warning, {0} has an abnormal format. Assuming BED6 format.\n".format(fp.name))
             return 'BED6'
         else:
-            sys.stderr.write("Warning, {} has an abnormal format. Assuming BED12 format.\n".format(fp.name))
+            sys.stderr.write("Warning, {0} has an abnormal format. Assuming BED12 format.\n".format(fp.name))
             return 'BED12'
 
     def mungeChromosome(self, chrom, append=True):
@@ -183,10 +183,10 @@ class GTF(object):
 
         strand = 3
         cols = line.split("\t")
-        name = "{}:{}-{}".format(cols[0], cols[1], cols[2])
+        name = "{0}:{1}-{2}".format(cols[0], cols[1], cols[2])
 
         if int(cols[1]) >= int(cols[2]) or int(cols[1]) < 0:
-            sys.stderr.write("Warning: {}:{}-{} is an invalid BED interval! Ignoring it.\n".format(cols[0], cols[1], cols[2]))
+            sys.stderr.write("Warning: {0}:{1}-{2} is an invalid BED interval! Ignoring it.\n".format(cols[0], cols[1], cols[2]))
             return
 
         # BED6/BED12: set name and strand
@@ -199,7 +199,7 @@ class GTF(object):
 
         # Ensure that the name is unique
         if name in self.exons.keys():
-            sys.stderr.write("Skipping {}, an entry by this name already exists!\n".format(name))
+            sys.stderr.write("Skipping {0}, an entry by this name already exists!\n".format(name))
             return False
         else:
             self.tree.addEntry(self.mungeChromosome(cols[0]), int(cols[1]), int(cols[2]), name, strand, self.labelIdx)
@@ -241,7 +241,7 @@ class GTF(object):
                 # If there was a previous group AND it had no entries then remove it
                 if groupLabelsFound > 0:
                     if groupEntries == 0:
-                        sys.stderr.write("Warning, the '{}' group had no valid entries! Removing it.\n".format(self.labels[self.labelIdx]))
+                        sys.stderr.write("Warning, the '{0}' group had no valid entries! Removing it.\n".format(self.labels[self.labelIdx]))
                         del self.labels[-1]
                         groupLabelsFound -= 1
                         self.labelIdx -= 1
@@ -270,11 +270,11 @@ class GTF(object):
         Parse and add a transcript entry
         """
         if int(cols[3]) - 1 < 0:
-            sys.stderr.write("Warning: Invalid start in '{}', skipping\n".format("\t".join(cols)))
+            sys.stderr.write("Warning: Invalid start in '{0}', skipping\n".format("\t".join(cols)))
             return
 
         if len(cols) < 9:
-            sys.stderr.write("Warning: non-GTF line encountered! {}\n".format("\t".join(cols)))
+            sys.stderr.write("Warning: non-GTF line encountered! {0}\n".format("\t".join(cols)))
             return
 
         m = self.deepTools_group_regex.search(cols[8])
@@ -318,12 +318,12 @@ class GTF(object):
         Parse an exon entry and add it to the transcript hash
         """
         if int(cols[3]) - 1 < 0:
-            sys.stderr.write("Warning: Invalid start in '{}', skipping\n".format("\t".join(cols)))
+            sys.stderr.write("Warning: Invalid start in '{0}', skipping\n".format("\t".join(cols)))
             return
 
         m = self.transcript_id_regex.search(cols[8])
         if not m:
-            sys.stderr.write("Warning: {} is malformed!\n".format("\t".join(cols)))
+            sys.stderr.write("Warning: {0} is malformed!\n".format("\t".join(cols)))
             return
 
         name = m.groups()[0]
