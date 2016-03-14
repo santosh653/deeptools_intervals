@@ -12,12 +12,12 @@ import bz2
 
 def getNext(fp):
     """
-    This is a wrapper around readline(), which needs to be decoded in python2 but not python3
+    Sometimes we need to decode, sometimes not
     """
-    if sys.version_info[0] > 2:
-        return fp.readline()
-    else:
-        return fp.readline().decode('utf-8')
+    line = fp.readline()
+    if isinstance(line, str):
+        return line
+    return line.decode('ascii')
 
 
 def seemsLikeGTF(cols, regex):
@@ -91,10 +91,10 @@ def openPossiblyCompressed(fname):
     A wrapper to open gzip/bzip/uncompressed files
     """
     with open(fname, "rb") as f:
-        first3 = f.read(3)
-    if first3 == "\x1f\x8b\x08":
+        first3 = bytes(f.read(3))
+    if first3 == b"\x1f\x8b\x08":
         return gzip.open(fname, "rb")
-    elif first3 == "\x42\x5a\x68":
+    elif first3 == b"\x42\x5a\x68":
         return bz2.BZ2File(fname, "rb")
     else:
         return open(fname)
@@ -108,10 +108,10 @@ class GTF(object):
     >>> from os.path import dirname
     >>> gtf = parse.GTF("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), keepExons=True)
     >>> gtf.findOverlaps("1", 1, 20000)
-    [(11868, 14409, 'ENST00000456328', u'group 1', [(11868, 12227), (12612, 12721), (13220, 14409)]), (12009, 13670, 'ENST00000450305', u'group 1', [(12009, 12057), (12178, 12227), (12612, 12697), (12974, 13052), (13220, 13374), (13452, 13670)]), (14403, 29570, 'ENST00000488147', u'group 1', [(14403, 14501), (15004, 15038), (15795, 15947), (16606, 16765), (16857, 17055), (17232, 17368), (17605, 17742), (17914, 18061), (18267, 18366), (24737, 24891), (29533, 29570)]), (17368, 17436, 'ENST00000619216', u'group 2', [(17368, 17436)])]
+    [(11868, 14409, 'ENST00000456328', 'group 1', [(11868, 12227), (12612, 12721), (13220, 14409)]), (12009, 13670, 'ENST00000450305', 'group 1', [(12009, 12057), (12178, 12227), (12612, 12697), (12974, 13052), (13220, 13374), (13452, 13670)]), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 14501), (15004, 15038), (15795, 15947), (16606, 16765), (16857, 17055), (17232, 17368), (17605, 17742), (17914, 18061), (18267, 18366), (24737, 24891), (29533, 29570)]), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)])]
     >>> gtf = parse.GTF("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)))
     >>> gtf.findOverlaps("1", 1, 20000)
-    [(11868, 14409, 'ENST00000456328', u'group 1', [(11868, 14409)]), (12009, 13670, 'ENST00000450305', u'group 1', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', u'group 1', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', u'group 2', [(17368, 17436)])]
+    [(11868, 14409, 'ENST00000456328', 'group 1', [(11868, 14409)]), (12009, 13670, 'ENST00000450305', 'group 1', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)])]
     """
 
     def firstNonComment(self, fp):
@@ -120,18 +120,18 @@ class GTF(object):
             while line.startswith("#") or line.startswith('track') or line.startswith('browser'):
                 line = getNext(fp)
         except:
-            sys.stderr.write("Warning, {0} was empty\n".format(fp.name))
+            sys.stderr.write("Warning, {0} was empty\n".format(self.filename))
             return None
         return line
 
     def inferType(self, fp, line):
         cols = line.split("\t")
         if len(cols) < 3:
-            raise RuntimeError('{0} does not seem to be a recognized file type!'.format(fp.name))
+            raise RuntimeError('{0} does not seem to be a recognized file type!'.format(self.filename))
         elif len(cols) == 3:
             return 'BED3'
         elif len(cols) < 6:
-            sys.stderr.write("Warning, {0} has an abnormal number of fields. Assuming BED3 format.\n".format(fp.name))
+            sys.stderr.write("Warning, {0} has an abnormal number of fields. Assuming BED3 format.\n".format(self.filename))
             return 'BED3'
         elif len(cols) == 6:
             return 'BED3'
@@ -140,10 +140,10 @@ class GTF(object):
         elif len(cols) == 12:
             return 'BED12'
         elif len(cols) < 12:
-            sys.stderr.write("Warning, {0} has an abnormal format. Assuming BED6 format.\n".format(fp.name))
+            sys.stderr.write("Warning, {0} has an abnormal format. Assuming BED6 format.\n".format(self.filename))
             return 'BED6'
         else:
-            sys.stderr.write("Warning, {0} has an abnormal format. Assuming BED12 format.\n".format(fp.name))
+            sys.stderr.write("Warning, {0} has an abnormal format. Assuming BED12 format.\n".format(self.filename))
             return 'BED12'
 
     def mungeChromosome(self, chrom, append=True):
@@ -219,7 +219,7 @@ class GTF(object):
         >>> from os.path import dirname
         >>> gtf = parse.GTF("{0}/test/GRCh38.84.bed6".format(dirname(parse.__file__)), keepExons=True)
         >>> gtf.findOverlaps("1", 1, 20000)
-        [(11868, 14409, '1:11868-14409', u'group 1', [(11868, 14409)]), (12009, 13670, '1:12009-13670', u'group 1', [(12009, 13670)]), (14403, 29570, '1:14403-29570', u'group 1', [(14403, 29570)]), (17368, 17436, '1:17368-17436', u'group 1', [(17368, 17436)])]
+        [(11868, 14409, '1:11868-14409', 'group 1', [(11868, 14409)]), (12009, 13670, '1:12009-13670', 'group 1', [(12009, 13670)]), (14403, 29570, '1:14403-29570', 'group 1', [(14403, 29570)]), (17368, 17436, '1:17368-17436', 'group 1', [(17368, 17436)])]
         >>> gtf = parse.GTF("{0}/test/GRCh38.84.bed".format(dirname(parse.__file__)), keepExons=True, labels=["foo", "bar", "quux", "sniggly"])
         >>> gtf.findOverlaps("1", 1, 20000)
         [(11868, 14409, '1:11868-14409', 'foo', [(11868, 14409)]), (12009, 13670, '1:12009-13670', 'foo', [(12009, 13670)]), (14403, 29570, '1:14403-29570', 'foo', [(14403, 29570)]), (17368, 17436, '1:17368-17436', 'foo', [(17368, 17436)])]
@@ -234,8 +234,8 @@ class GTF(object):
 
         # iterate over the remaining lines
         for line in fp:
-            if sys.version_info[0] == 2:
-                line = line.decode('utf-8')
+            if not isinstance(line, str):
+                line = line.decode('ascii')
             line = line.strip()
             if line.startswith("#"):
                 # If there was a previous group AND it had no entries then remove it
@@ -252,7 +252,7 @@ class GTF(object):
                     self.labels.append(findRandomLabel(self.labels, label))
                 else:
                     # I'm sure someone will try an empty label...
-                    self.labels.append(findRandomLabel(self.labels, fp.name))
+                    self.labels.append(findRandomLabel(self.labels, self.filename))
                 self.labelIdx += 1
                 groupLabelsFound += 1
                 groupEntries = 0
@@ -262,7 +262,7 @@ class GTF(object):
 
         if groupLabelsFound == 0 or self.labelIdx - startingIdx + 1 > groupLabelsFound:
             # This can only happen once
-            self.labels.append(findRandomLabel(self.labels, fp.name))
+            self.labels.append(findRandomLabel(self.labels, self.filename))
             self.labelIdx += 1
 
     def parseGTFtranscript(self, cols, label):
@@ -340,7 +340,7 @@ class GTF(object):
         in a file that isn't explicitly labeled with a deepTools_group
         key:values pair in the last column
         """
-        file_label = findRandomLabel(self.labels, fp.name)
+        file_label = findRandomLabel(self.labels, self.filename)
 
         # Handle the first line
         cols = line.split("\t")
@@ -351,8 +351,8 @@ class GTF(object):
 
         # Handle the remaining lines
         for line in fp:
-            if sys.version_info[0] == 2:
-                line = line.decode('utf-8')
+            if not isinstance(line, str):
+                line = line.decode('ascii')
             if not line.startswith('#'):
                 cols = line.split("\t")
                 if cols[2].lower() == self.transcriptID:
@@ -375,7 +375,8 @@ class GTF(object):
           * These handle labels (python-level, with a C-level numeric attribute)
         4) Sanity checking (do the number of labels make sense?)
         """
-        self.fnames = []
+        self.fname = []
+        self.filename = ""
         self.chroms = []
         self.exons = {}
         self.labels = []
@@ -397,6 +398,7 @@ class GTF(object):
 
         # Load the files
         for fname in fnames:
+            self.filename = fname
             fp = openPossiblyCompressed(fname)
             line = self.firstNonComment(fp).strip()
             if line is None:
