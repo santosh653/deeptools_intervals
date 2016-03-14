@@ -38,7 +38,7 @@ static PyMethodDef treeMethods[] = {
 "Prints a text representation in dot format.\n"},
     {"countEntries", (PyCFunction) pyCountEntries, METH_VARARGS,
 "Count the number of entries in a GTFtree\n"},
-    {"isTree", (PyCFunction) pyCountEntries, METH_VARARGS,
+    {"isTree", (PyCFunction) pyIsTree, METH_VARARGS,
 "Return True if the object is a tree\n"},
     {"findOverlaps", (PyCFunction) pyFindOverlaps, METH_VARARGS,
 "Find overlapping intervals\n"},

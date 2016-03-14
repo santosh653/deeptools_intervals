@@ -3,4 +3,4 @@ include deeptoolsintervals/tree.*
 exclude deeptoolsintervals/tree/*.c
 exclude deeptoolsintervals/tree/*.h
 exclude deeptoolsintervals/*.py
-include deeptoolsintervals/test/*.gtf.gz
+include deeptoolsintervals/test/*

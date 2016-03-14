@@ -4,13 +4,13 @@ from deeptoolsintervals import tree
 import re
 import sys
 import gzip
+import bz2
 
-gene_id_regex = re.compile('(?:gene_id (?:\"([ \w\d"\-]+)\"|([ \w\d"\-]+))[;|\r|\n])')
-transcript_id_regex = re.compile('(?:transcript_id (?:\"([ \w\d"\-]+)\"|([ \w\d"\-]+))[;|\r|\n])')
-deepTools_group_regex = re.compile('(?:deepTools_group (?:\"([ \w\d"\-]+)\"|([ \w\d"\-]+))[;|\r|\n])')
+# TODO Make the documentation not suck!
+# TODO: test groups and multiple files GTF files.
 
 
-def seemsLikeGTF(cols):
+def seemsLikeGTF(cols, regex):
     """
     Does a line look like it could be from a GTF file? Column contents must be:
 
@@ -29,7 +29,7 @@ def seemsLikeGTF(cols):
         cols[6] in ['+', '-', '.']
         if cols[7] != '.':
             int(cols[7]) in [0, 1, 2]
-        assert(gene_id_regex.match(cols[8]) != None)
+        assert(regex.match(cols[8]) is not None)
         return True
     except:
         return False
@@ -60,6 +60,8 @@ def parseExonBounds(start, end, n, sizes, offsets):
     """
     offsets = offsets.strip(",").split(",")
     sizes = sizes.strip(",").split(",")
+    offsets = offsets[0:n]
+    sizes = sizes[0:n]
     try:
         starts = [start + int(x) for x in offsets]
         ends = [start + int(x) + int(y) for x, y in zip(offsets, sizes)]
@@ -74,45 +76,33 @@ def parseExonBounds(start, end, n, sizes, offsets):
     return [(x, y) for x, y in zip(starts, ends)]
 
 
+def openPossiblyCompressed(fname):
+    """
+    A wrapper to open gzip/bzip/uncompressed files
+    """
+    with open(fname) as f:
+        first3 = f.read(3)
+    if first3 == "\x1f\x8b\x08":
+        return gzip.open(fname, "rb")
+    elif first3 == "\x42\x5a\x68":
+        return bz2.BZ2File(fname, "rb")
+    else:
+        return open(fname)
+
+
 class GTF(object):
     """
     A class to hold an interval tree and its associated functions
 
     >>> from deeptoolsintervals import parse
     >>> from os.path import dirname
-    >>> gtf = parse.GTF()
-    >>> gtf.parse("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), keepExons=True, labels=["foo"])
+    >>> gtf = parse.GTF("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), keepExons=True, labels=["foo"])
     >>> gtf.findOverlaps("1", 1, 20000)
-    [(11868, 14409, 'foo', [(11868, 12227), (12612, 12721), (13220, 14409)]), (12009, 13670, 'foo', [(12009, 12057), (12178, 12227), (12612, 12697), (12974, 13052), (13220, 13374), (13452, 13670)]), (14403, 29570, 'foo', [(14403, 14501), (15004, 15038), (15795, 15947), (16606, 16765), (16857, 17055), (17232, 17368), (17605, 17742), (17914, 18061), (18267, 18366), (24737, 24891), (29533, 29570)]), (17368, 17436, 'foo', [(17368, 17436)])]
-    >>> gtf = parse.GTF()
-    >>> gtf.parse("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), labels=["foo"])
+    [(11868, 14409, 'ENST00000456328', 'foo', [(11868, 12227), (12612, 12721), (13220, 14409)]), (12009, 13670, 'ENST00000450305', 'foo', [(12009, 12057), (12178, 12227), (12612, 12697), (12974, 13052), (13220, 13374), (13452, 13670)]), (14403, 29570, 'ENST00000488147', 'foo', [(14403, 14501), (15004, 15038), (15795, 15947), (16606, 16765), (16857, 17055), (17232, 17368), (17605, 17742), (17914, 18061), (18267, 18366), (24737, 24891), (29533, 29570)]), (17368, 17436, 'ENST00000619216', 'foo', [(17368, 17436)])]
+    >>> gtf = parse.GTF("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), labels=["foo"])
     >>> gtf.findOverlaps("1", 1, 20000)
-    [(11868, 14409, 'foo', [(11868, 14409)]), (12009, 13670, 'foo', [(12009, 13670)]), (14403, 29570, 'foo', [(14403, 29570)]), (17368, 17436, 'foo', [(17368, 17436)])]
-
-    TODO Include a find overlaps test
+    [(11868, 14409, 'ENST00000456328', 'foo', [(11868, 14409)]), (12009, 13670, 'ENST00000450305', 'foo', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', 'foo', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', 'foo', [(17368, 17436)])]
     """
-
-    def __init__(self):
-        """
-        fnames:	The file name(s)
-        exonID:	The exon feature designator (only for GTF)
-        transcriptID: The transcript feature designator (only for GTF)
-        labels:	A list of group labels (designated by 'deepTools_group' in GTF or # lines in BED or multiple file names for both)
-        ftype:	The (current) inferred file type
-        chroms:	A dictionary of chromosomes that have been found. This is only needed in case someone uses multiple files with different chromosome names
-        exons:	A dictionary with transcript ID as the key and exonic bounds as the value. We'll see if this is quick enough
-        tree: The pyGTFtree object is held here
-        """
-        self.fnames = []
-        self.exonID = "exon"
-        self.transcriptID = "transcript"
-        self.keepExons = False
-        self.chroms = []
-        self.exons = {}
-        self.labels = []
-        self.transcriptIDduplicated = []
-        self.tree = tree.initTree()
-        self.labelIdx = 0
 
     def firstNonComment(self, fp):
         line = fp.readline().decode('utf-8')
@@ -135,7 +125,7 @@ class GTF(object):
             return 'BED3'
         elif len(cols) == 6:
             return 'BED3'
-        elif len(cols) == 9 and seemsLikeGTF(cols):
+        elif len(cols) == 9 and seemsLikeGTF(cols, self.gene_id_regex):
             return 'GTF'
         elif len(cols) == 12:
             return 'BED12'
@@ -173,22 +163,28 @@ class GTF(object):
     def parseBEDcore(self, line, ncols):
         """
         Returns True if the entry was added, otherwise False
+
+        >>> from deeptoolsintervals import parse
+        >>> from os.path import dirname
+        >>> gtf = parse.GTF("{0}/test/GRCh38.84.bed12.bz2".format(dirname(parse.__file__)), keepExons=True, labels=["foo"])
+        >>> gtf.findOverlaps("1", 1, 20000)
+        [(11868, 14409, 'ENST00000456328.2', 'foo', [(11868, 12227), (12612, 12721), (13220, 14409)]), (12009, 13670, 'ENST00000450305.2', 'foo', [(12009, 12057), (12178, 12227), (12612, 12697), (12974, 13052), (13220, 13374), (13452, 13670)]), (14403, 29570, 'ENST00000488147.1', 'foo', [(14403, 14501), (15004, 15038), (15795, 15947), (16606, 16765), (16857, 17055), (17232, 17368), (17605, 17742), (17914, 18061), (18267, 18366), (24737, 24891), (29533, 29570)]), (17368, 17436, 'ENST00000619216.1', 'foo', [(17368, 17436)])]
         """
 
         strand = 3
         cols = line.split("\t")
-        name = "{}:{}-{}".format(cols[1:3])
+        name = "{}:{}-{}".format(cols[0], cols[1], cols[2])
 
         if int(cols[1]) >= int(cols[2]) or int(cols[1]) < 0:
             sys.stderr.write("Warning: {}:{}-{} is an invalid BED interval! Ignoring it.\n".format(cols[0], cols[1], cols[2]))
             return
 
         # BED6/BED12: set name and strand
-        if ncols != 3: 
-            name = cols[4]
-            if cols[6] == '+':
+        if ncols > 3:
+            name = cols[3]
+            if cols[5] == '+':
                 strand = 0
-            elif cols[6] == '-':
+            elif cols[5] == '-':
                 strand = 1
 
         # Ensure that the name is unique
@@ -197,31 +193,38 @@ class GTF(object):
             return False
         else:
             self.tree.addEntry(self.mungeChromosome(cols[0]), int(cols[1]), int(cols[2]), name, strand, self.labelIdx)
-            if ncols != 12 or self.keepExons == False:
+            if ncols != 12 or self.keepExons is False:
                 self.exons[name] = [(int(cols[1]), int(cols[2]))]
             else:
+                assert(len(cols) == 12)
                 self.exons[name] = parseExonBounds(int(cols[1]), int(cols[2]), int(cols[9]), cols[10], cols[11])
         return True
 
     def parseBED(self, fp, line, ncols=3):
         """
         parse a BED file. The default group label is the file name.
+
+
+        >>> from deeptoolsintervals import parse
+        >>> from os.path import dirname
+        >>> gtf = parse.GTF("{0}/test/GRCh38.84.bed6".format(dirname(parse.__file__)), keepExons=True)
+        >>> gtf.findOverlaps("1", 1, 20000)
+        [(11868, 14409, '1:11868-14409', u'group 1', [(11868, 14409)]), (12009, 13670, '1:12009-13670', u'group 1', [(12009, 13670)]), (14403, 29570, '1:14403-29570', u'group 1', [(14403, 29570)]), (17368, 17436, '1:17368-17436', u'group 1', [(17368, 17436)])]
+        >>> gtf = parse.GTF("{0}/test/GRCh38.84.bed".format(dirname(parse.__file__)), keepExons=True, labels=["foo", "bar", "quux", "sniggly"])
+        >>> gtf.findOverlaps("1", 1, 20000)
+        [(11868, 14409, '1:11868-14409', 'foo', [(11868, 14409)]), (12009, 13670, '1:12009-13670', 'foo', [(12009, 13670)]), (14403, 29570, '1:14403-29570', 'foo', [(14403, 29570)]), (17368, 17436, '1:17368-17436', 'foo', [(17368, 17436)])]
         """
         groupLabelsFound = 0
         groupEntries = 0
-        # If are already labels then we need to increment the index, otherwise we start overwritting
-        # TODO What happens if we use multiple files, one of which is only comments?
-        if self.labelIdx > 0:
-            self.labelIdx += 1
         startingIdx = self.labelIdx
 
         # Handle the first line
-        if parseBEDcore(line, ncols):
+        if self.parseBEDcore(line, ncols):
             groupEntries = 1
 
         # iterate over the remaining lines
         for line in fp:
-            line = line.decode('utf-8')
+            line = line.decode('utf-8').strip()
             if line.startswith("#"):
                 # If there was a previous group AND it had no entries then remove it
                 if groupLabelsFound > 0:
@@ -242,10 +245,10 @@ class GTF(object):
                 groupLabelsFound += 1
                 groupEntries = 0
             else:
-                if parseBEDcore(line, ncols):
+                if self.parseBEDcore(line, ncols):
                     groupEntries += 1
 
-        if groupLabelsFound == 0 or self.labelIdx - startingIdx > groupLabelsFound:
+        if groupLabelsFound == 0 or self.labelIdx - startingIdx + 1 > groupLabelsFound:
             # This can only happen once
             self.labels.append(findRandomLabel(self.labels, fp.name))
             self.labelIdx += 1
@@ -262,23 +265,23 @@ class GTF(object):
             sys.stderr.write("Warning: non-GTF line encountered! {}\n".format("\t".join(cols)))
             return
 
-        m = deepTools_group_regex.search(cols[8])
+        m = self.deepTools_group_regex.search(cols[8])
         if m:
             label = m.groups()[0]
 
-        m = transcript_id_regex.search(cols[8])
+        m = self.transcript_id_regex.search(cols[8])
         if not m:
-             sys.stderr.write("Warning: {} is malformed!\n".format("\t".join(cols)))
-             return
+            sys.stderr.write("Warning: {0} is malformed!\n".format("\t".join(cols)))
+            return
 
         name = m.groups()[0]
         if name in self.exons.keys():
-            sys.stderr.write("Warning: {} occurs more than once! Only using the first instance.\n".format(name))
+            sys.stderr.write("Warning: {0} occurs more than once! Only using the first instance.\n".format(name))
             self.transcriptIDduplicated.append(name)
             return
 
         if int(cols[3]) > int(cols[4]) or int(cols[3]) < 1:
-            sys.stderr.write("Warning: {}:{}-{} is an invalid GTF interval! Ignoring it.\n".format(cols[0], cols[3], cols[4]))
+            sys.stderr.write("Warning: {0}:{1}-{2} is an invalid GTF interval! Ignoring it.\n".format(cols[0], cols[3], cols[4]))
             return
 
         strand = 3
@@ -306,7 +309,7 @@ class GTF(object):
             sys.stderr.write("Warning: Invalid start in '{}', skipping\n".format("\t".join(cols)))
             return
 
-        m = transcript_id_regex.search(cols[8])
+        m = self.transcript_id_regex.search(cols[8])
         if not m:
             sys.stderr.write("Warning: {} is malformed!\n".format("\t".join(cols)))
             return
@@ -341,13 +344,13 @@ class GTF(object):
                 cols = line.split("\t")
                 if cols[2].lower() == self.transcriptID:
                     self.parseGTFtranscript(cols, file_label)
-                elif cols[2].lower() == self.exonID and self.keepExons == True:
+                elif cols[2].lower() == self.exonID and self.keepExons is True:
                     self.parseGTFexon(cols)
 
         # Reset self.labelIdx
         self.labelIdx = len(self.labels) - 1
 
-    def parse(self, fnames, exonID="exon", transcriptID="transcript", keepExons=False, labels=[]):
+    def __init__(self, fnames, exonID="exon", transcriptID="transcript", keepExons=False, labels=[], transcript_id_designator="transcript_id"):
         """
         Driver function to actually parse files. The steps are as follows:
 
@@ -359,6 +362,16 @@ class GTF(object):
           * These handle labels (python-level, with a C-level numeric attribute)
         4) Sanity checking (do the number of labels make sense?)
         """
+        self.fnames = []
+        self.chroms = []
+        self.exons = {}
+        self.labels = []
+        self.transcriptIDduplicated = []
+        self.tree = tree.initTree()
+        self.labelIdx = 0
+        self.gene_id_regex = re.compile('(?:gene_id (?:\"([ \w\d"\-]+)\"|([ \w\d"\-]+))[;|\r|\n])')
+        self.transcript_id_regex = re.compile('(?:{0} (?:\"([ \w\d"\-]+)\"|([ \w\d"\-]+))[;|\r|\n])'.format(transcript_id_designator))
+        self.deepTools_group_regex = re.compile('(?:deepTools_group (?:\"([ \w\d"\-]+)\"|([ \w\d"\-]+))[;|\r|\n])')
         self.exonID = exonID
         self.transcriptID = transcriptID
         self.keepExons = keepExons
@@ -371,8 +384,8 @@ class GTF(object):
 
         # Load the files
         for fname in fnames:
-            fp = gzip.open(fname, "rb")
-            line = self.firstNonComment(fp)
+            fp = openPossiblyCompressed(fname)
+            line = self.firstNonComment(fp).strip()
             if line is None:
                 # This will only ever happen if a file is empty or just has a header/comment
                 continue
@@ -380,7 +393,7 @@ class GTF(object):
             ftype = self.inferType(fp, line)
             if ftype == 'GTF':
                 self.parseGTF(fp, line)
-            elif ftype == 'BED':
+            elif ftype == 'BED3':
                 self.parseBED(fp, line, 3)
             elif ftype == 'BED6':
                 self.parseBED(fp, line, 6)
@@ -395,7 +408,7 @@ class GTF(object):
         # Replace labels
         if len(labels) > 0:
             if len(labels) != len(self.labels):
-                raise RuntimeError("The number of labels found does not match the number input!")
+                raise RuntimeError("The number of labels found ({0}) does not match the number input ({1})!".format(self.labels, labels))
             else:
                 self.labels = labels
 
@@ -429,6 +442,22 @@ class GTF(object):
                       1, GTF_SAME_STRAND
                       2, GTF_OPPOSITE_STRAND
                       3, GTF_EXACT_SAME_STRAND
+
+        >>> from deeptoolsintervals import parse
+        >>> from os.path import dirname, basename
+        >>> gtf = parse.GTF(["{0}/test/GRCh38.84.bed6".format(dirname(parse.__file__)), "{0}/test/GRCh38.84.bed2".format(dirname(parse.__file__))], keepExons=True)
+        >>> overlaps = gtf.findOverlaps("1", 0, 3000000)
+        >>> labels = dict()
+        >>> for o in overlaps:
+        ...     if basename(o[3]) not in labels.keys():
+        ...         labels[basename(o[3])] = 0
+        ...     labels[basename(o[3])] += 1
+        >>> assert(labels['GRCh38.84.bed2'] == 1)
+        >>> assert(labels['GRCh38.84.bed6'] == 15)
+        >>> assert(labels['group2'] == 9)
+        >>> assert(labels['group 3'] == 7)
+        >>> assert(labels['group 1'] == 6)
+        >>> assert(labels['group 1_r1'] == 4)
         """
         chrom = self.mungeChromosome(chrom, append=False)
         if not chrom:
@@ -458,6 +487,7 @@ class GTF(object):
                 exons = [(o[0], o[1])]
             else:
                 exons = sorted(self.exons[o[2]])
-            overlaps[i] = (o[0], o[1], self.labels[o[3]], exons)
+
+            overlaps[i] = (o[0], o[1], o[2], self.labels[o[3]], exons)
 
         return overlaps

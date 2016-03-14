@@ -148,13 +148,13 @@ static PyObject *pyIsTree(pyGTFtree_t *self, PyObject *args) {
 
 static PyObject *pyFindOverlaps(pyGTFtree_t *self, PyObject *args) {
     GTFtree *t = self->t;
-    char *chrom = NULL, *name = 0, *transcript_id;
+    char *chrom = NULL, *name = NULL, *transcript_id = NULL;
     int32_t i;
     uint32_t start, end;
-    int strand, strandType, matchType;
+    int strand = 3, strandType = 0, matchType = 0;
     unsigned long lstrand, lstart, lend, lmatchType, lstrandType, llabelIdx;
     overlapSet *os = NULL;
-    PyObject *olist = NULL, *otuple = NULL, *olong = NULL;
+    PyObject *olist = NULL, *otuple = NULL;
 
     if(!(PyArg_ParseTuple(args, "skkkkks", &chrom, &lstart, &lend, &lstrand, &lmatchType, &lstrandType, &transcript_id))) {
         PyErr_SetString(PyExc_RuntimeError, "pyFindOverlaps received an invalid or missing argument!");
