@@ -6,8 +6,8 @@ import sys
 import gzip
 import bz2
 
-# TODO Make the documentation not suck!
-# TODO: test groups and multiple files GTF files.
+# TODO: Make the documentation not suck!
+# TODO: Trim overlap option (remove 3' overhang)
 
 
 def getNext(fp):
@@ -339,6 +339,20 @@ class GTF(object):
         parse a GTF file. Note that a single label will be used for every entry
         in a file that isn't explicitly labeled with a deepTools_group
         key:values pair in the last column
+
+        >>> from deeptoolsintervals import parse
+        >>> from os.path import dirname, basename
+        >>> gtf = parse.GTF(["{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), "{0}/test/GRCh38.84.2.gtf.gz".format(dirname(parse.__file__))], keepExons=True)
+        >>> overlaps = gtf.findOverlaps("1", 1, 20000000)
+        >>> labels = dict()
+        >>> for o in overlaps:
+        ...     if basename(o[3]) not in labels.keys():
+        ...         labels[basename(o[3])] = 0
+        ...     labels[basename(o[3])] += 1
+        >>> assert(labels['GRCh38.84.gtf.gz'] == 17)
+        >>> assert(labels['GRCh38.84.2.gtf.gz'] == 6)
+        >>> assert(labels['group 1'] == 5)
+        >>> assert(labels['group 2'] == 3)
         """
         file_label = findRandomLabel(self.labels, self.filename)
 
