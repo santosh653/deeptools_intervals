@@ -7,7 +7,6 @@ import gzip
 import bz2
 
 # TODO: Make the documentation not suck!
-# TODO: Trim overlap option (remove 3' overhang)
 
 
 def getNext(fp):
@@ -112,6 +111,8 @@ class GTF(object):
     >>> gtf = parse.GTF("{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)))
     >>> gtf.findOverlaps("1", 1, 20000)
     [(11868, 14409, 'ENST00000456328', 'group 1', [(11868, 14409)]), (12009, 13670, 'ENST00000450305', 'group 1', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)])]
+    >>> gtf.findOverlaps("1", 12000, 20000, trimOverlap=True)
+    [(12009, 13670, 'ENST00000450305', 'group 1', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)])]
     """
 
     def firstNonComment(self, fp):
@@ -445,7 +446,7 @@ class GTF(object):
         self.tree.finish()
 
     # findOverlaps()
-    def findOverlaps(self, chrom, start, end, strand=".", matchType=0, strandType=0):
+    def findOverlaps(self, chrom, start, end, strand=".", matchType=0, strandType=0, trimOverlap=False):
         """
         Given a chromosome and start/end coordinates with an optional strand,
         return a list of tuples comprised of:
@@ -518,5 +519,19 @@ class GTF(object):
                 exons = sorted(self.exons[o[2]])
 
             overlaps[i] = (o[0], o[1], o[2], self.labels[o[3]], exons)
+
+        # Ensure that the intervals are sorted by their 5'-most bound. This enables trimming
+        overlaps = sorted(overlaps)
+
+        if trimOverlap:
+            while True:
+                if len(overlaps) > 0:
+                    if overlaps[0][0] < start:
+                        del overlaps[0]
+                    else:
+                        break
+                else:
+                    overlaps = None
+                    break
 
         return overlaps
