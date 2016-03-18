@@ -36,8 +36,7 @@ For GTF and BED12 files, exons are not stored by default, this can be changed wi
 
 The utility of this will be seen later. GTF and BED files may contain comments or browser lines at the beginning, these are ignored.
 
-Labels
-++++++
+### Labels
 
 It's often useful to have multiple groups of intervals. This can be accomplished by assigning a label to each interval. If multiple files are used, then this package will default to assigning the file name as a label to intervals in each input file. Alternatively, labels can be included inside of files. For BED files, this is accomplished as follows:
 
@@ -47,20 +46,20 @@ It's often useful to have multiple groups of intervals. This can be accomplished
     chr1	300	400
     #My other group
 
-These labels MUST be unique in BED files. If they are not, then each subsequent instance will have a suffix appended to ensure that it is unique.
+These labels **MUST** be unique in BED files. If they are not, then each subsequent instance will have a suffix appended to ensure that it is unique.
 
 For GTF files, labels are included in the attribute column, by the addition of `deepTools_group` key:value pair:
 
     chr1       havana  transcript      11869   14409   .       +       .       gene_id "ENSG00000223972"; transcript_id "ENST00000456328"; deepTools_group "group 1";
 
-These labels do *NOT* need to be unique across files.
+These labels do **NOT** need to be unique across files.
 
 Labels can be over-riden with the `labels` option:
 
     from deeptoolsintervals import GTF
     gtf = GTF(["some_file.gtf", "some_other_file.bed.gz"], keepExons=True, labels=["foo", "bar", "quux", "sniggly"])
 
-The number of provided labels *MUST* match the number encountered. These labels are applied in the order that groups are encountered in the input files. So if in the above example both files contain two groups, then the following would produce the same results but with the labels swapped across files:
+The number of provided labels **MUST** match the number encountered. These labels are applied in the order that groups are encountered in the input files. So if in the above example both files contain two groups, then the following would produce the same results but with the labels swapped across files:
 
     from deeptoolsintervals import GTF
     gtf = GTF(["some_other_file.bed.gz", "some_file.gtf"], keepExons=True, labels=["foo", "bar", "quux", "sniggly"])
@@ -71,8 +70,7 @@ Labels can also be replaced after the fact:
     gtf = GTF(["some_file.gtf", "some_other_file.bed.gz", "some_file.gtf"], keepExons=True)
     gtf.labels = ["foo", "bar", "quux", "sniggly"]
 
-GTF-specific options
-++++++++++++++++++++
+### GTF-specific options
 
 GTF files come with three options specific to them: `exonID`, `transcriptID`, and `transcript_id_designator`. The "feature" column (column 3) in a GTF file denotes the type of feature an entry describes. By default, this package only looks at entries with `transcript` or `exon` (with `keepExons=True`) in the feature column. For some use cases, one might instead want to store CDS as exonic intervals or replace transcripts with genes.
 
