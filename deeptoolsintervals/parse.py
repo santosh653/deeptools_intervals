@@ -6,8 +6,6 @@ import sys
 import gzip
 import bz2
 
-# TODO: Make the documentation not suck!
-
 
 def getNext(fp):
     """
@@ -116,6 +114,9 @@ class GTF(object):
     """
 
     def firstNonComment(self, fp):
+        """
+        Skip lines at the beginning of a file starting with #, browser, or track.
+        """
         line = getNext(fp)
         try:
             while line.startswith("#") or line.startswith('track') or line.startswith('browser'):
@@ -126,6 +127,9 @@ class GTF(object):
         return line
 
     def inferType(self, fp, line):
+        """
+        Attempt to infer a file type from a single line. This is largely based on the number of columns plus a regex looking for "gene_id".
+        """
         cols = line.split("\t")
         if len(cols) < 3:
             raise RuntimeError('{0} does not seem to be a recognized file type!'.format(self.filename))
@@ -214,6 +218,10 @@ class GTF(object):
     def parseBED(self, fp, line, ncols=3):
         """
         parse a BED file. The default group label is the file name.
+
+        fp:    A python file pointer
+        line:  The first line
+        ncols: The number of columns to care about
 
 
         >>> from deeptoolsintervals import parse
@@ -341,6 +349,9 @@ class GTF(object):
         in a file that isn't explicitly labeled with a deepTools_group
         key:values pair in the last column
 
+        fp:   A python file pointer
+        line: The first non-comment line
+
         >>> from deeptoolsintervals import parse
         >>> from os.path import dirname, basename
         >>> gtf = parse.GTF(["{0}/test/GRCh38.84.gtf.gz".format(dirname(parse.__file__)), "{0}/test/GRCh38.84.2.gtf.gz".format(dirname(parse.__file__))], keepExons=True)
@@ -389,6 +400,25 @@ class GTF(object):
           * These handle chromsome name conversions (python-level)
           * These handle labels (python-level, with a C-level numeric attribute)
         4) Sanity checking (do the number of labels make sense?)
+
+        Required inputs are as follows:
+
+        fnames:	A list of (possibly compressed with gzip or bzip2) GTF or BED files.
+
+        Optional input is:
+
+        exonID:	      For GTF files, the feature column (column 3) label for
+                      exons, or whatever else should be stored as exons. The
+                      default is 'exon', though one could use 'CDS' instead.
+        transcriptID: As above, but for transcripts. The default is
+                      'transcript_id'.
+        keepExons:    For BED12 and GTF files, exons are ignored by default.
+        labels:       A list of group labels.
+        transcript_id_designator: For gtf files, this the key used in a regex.
+                      If one set transcriptID to 'gene', then
+                      transcript_id_designator would need to be changed to
+                      'gene_id' or 'gene_name' to extract the gene ID/name from
+                      the attributes.
         """
         self.fname = []
         self.filename = ""
@@ -458,7 +488,7 @@ class GTF(object):
          * [(exon start, exon end), ...]
 
         If there are no overlaps, return None. This function allows stranded
-        searching!
+        searching, though the default is to ignore strand!
 
         The non-obvious options are defined in gtf.h:
           matchType:  0, GTF_MATCH_ANY
@@ -472,6 +502,13 @@ class GTF(object):
                       1, GTF_SAME_STRAND
                       2, GTF_OPPOSITE_STRAND
                       3, GTF_EXACT_SAME_STRAND
+
+        trimOverlap:   If true, this removes overlaps from the 5' end that
+                       extend beyond the range requested. This is useful in
+                       cases where a function calling this does is first
+                       dividing the genome into large bins. In that case,
+                       'trimOverlap=True' can be used to ensure that a given
+                       interval is never seen more than once.
 
         >>> from deeptoolsintervals import parse
         >>> from os.path import dirname, basename
