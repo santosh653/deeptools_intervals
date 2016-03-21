@@ -101,7 +101,7 @@ Each tuple contains the following members (in order): 0-based starting position,
     gtf.findOverlaps("chr1", 1, 20000)
     [(11868, 14409, 'ENST00000456328', 'group 1', [(11868, 14409)]), (12009, 13670, 'ENST00000450305', 'group 1', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)])]
 
-In some cases, it's desirable to have the group labels be numeric, since the regions may be used for further processing and the results sorted or grouped accordingly. The `numericGroup` argument can be used to facilitate this:
+In some cases, it's desirable to have the group labels be numeric, since the regions may be used for further processing and the results sorted or grouped accordingly. The `numericGroups` argument can be used to facilitate this:
 
     from deeptoolsintervals import parse
     gtf = parse.GTF("foo.gtf")
