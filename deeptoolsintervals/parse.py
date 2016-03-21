@@ -111,6 +111,8 @@ class GTF(object):
     [(11868, 14409, 'ENST00000456328', 'group 1', [(11868, 14409)]), (12009, 13670, 'ENST00000450305', 'group 1', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)])]
     >>> gtf.findOverlaps("1", 12000, 20000, trimOverlap=True)
     [(12009, 13670, 'ENST00000450305', 'group 1', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)])]
+    >>> gtf.findOverlaps("1", 1, 20000, numericGroups=True, includeStrand=True)
+    [(11868, 14409, 'ENST00000456328', 0, [(11868, 14409)], '+'), (12009, 13670, 'ENST00000450305', 0, [(12009, 13670)], '+'), (14403, 29570, 'ENST00000488147', 0, [(14403, 29570)], '+'), (17368, 17436, 'ENST00000619216', 1, [(17368, 17436)], '-')]
     """
 
     def firstNonComment(self, fp):
@@ -476,7 +478,7 @@ class GTF(object):
         self.tree.finish()
 
     # findOverlaps()
-    def findOverlaps(self, chrom, start, end, strand=".", matchType=0, strandType=0, trimOverlap=False, numericGroup=False):
+    def findOverlaps(self, chrom, start, end, strand=".", matchType=0, strandType=0, trimOverlap=False, numericGroups=False, includeStrand=False):
         """
         Given a chromosome and start/end coordinates with an optional strand,
         return a list of tuples comprised of:
@@ -486,6 +488,7 @@ class GTF(object):
          * name
          * label
          * [(exon start, exon end), ...]
+         * strand (optional)
 
         If there are no overlaps, return None. This function allows stranded
         searching, though the default is to ignore strand!
@@ -510,9 +513,11 @@ class GTF(object):
                        'trimOverlap=True' can be used to ensure that a given
                        interval is never seen more than once.
 
-        numericGroup:  Whether to return group labels or simply the numeric
+        numericGroups: Whether to return group labels or simply the numeric
                        index. The latter is more useful when these are passed to
                        a function whose output will be sorted according to group.
+
+        includeStrand: Whether to include the strand in the output. The default is False
 
         >>> from deeptoolsintervals import parse
         >>> from os.path import dirname, basename
@@ -549,9 +554,11 @@ class GTF(object):
         else:
             strand = 0
 
-        overlaps = self.tree.findOverlaps(chrom, start, end, strand, matchType, strandType, "transcript_id")
+        overlaps = self.tree.findOverlaps(chrom, start, end, strand, matchType, strandType, "transcript_id", includeStrand)
         if not overlaps:
             return None
+
+        strandList = ['+', '-', '', '.']
 
         for i, o in enumerate(overlaps):
             if o[2] not in self.exons.keys() or len(self.exons[o[2]]) == 0:
@@ -559,10 +566,13 @@ class GTF(object):
             else:
                 exons = sorted(self.exons[o[2]])
 
-            if numericGroup:
+            if numericGroups:
                 overlaps[i] = (o[0], o[1], o[2], o[3], exons)
             else:
                 overlaps[i] = (o[0], o[1], o[2], self.labels[o[3]], exons)
+
+            if includeStrand:
+                overlaps[i] = overlaps[i] + (strandList[o[-1]],)
 
         # Ensure that the intervals are sorted by their 5'-most bound. This enables trimming
         overlaps = sorted(overlaps)
