@@ -476,7 +476,7 @@ class GTF(object):
         self.tree.finish()
 
     # findOverlaps()
-    def findOverlaps(self, chrom, start, end, strand=".", matchType=0, strandType=0, trimOverlap=False):
+    def findOverlaps(self, chrom, start, end, strand=".", matchType=0, strandType=0, trimOverlap=False, numericGroup=False):
         """
         Given a chromosome and start/end coordinates with an optional strand,
         return a list of tuples comprised of:
@@ -509,6 +509,10 @@ class GTF(object):
                        dividing the genome into large bins. In that case,
                        'trimOverlap=True' can be used to ensure that a given
                        interval is never seen more than once.
+
+        numericGroup:  Whether to return group labels or simply the numeric
+                       index. The latter is more useful when these are passed to
+                       a function whose output will be sorted according to group.
 
         >>> from deeptoolsintervals import parse
         >>> from os.path import dirname, basename
@@ -555,7 +559,10 @@ class GTF(object):
             else:
                 exons = sorted(self.exons[o[2]])
 
-            overlaps[i] = (o[0], o[1], o[2], self.labels[o[3]], exons)
+            if numericGroup:
+                overlaps[i] = (o[0], o[1], o[2], o[3], exons)
+            else:
+                overlaps[i] = (o[0], o[1], o[2], self.labels[o[3]], exons)
 
         # Ensure that the intervals are sorted by their 5'-most bound. This enables trimming
         overlaps = sorted(overlaps)
