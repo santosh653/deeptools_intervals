@@ -156,7 +156,7 @@ static PyObject *pyFindOverlaps(pyGTFtree_t *self, PyObject *args) {
     overlapSet *os = NULL;
     PyObject *olist = NULL, *otuple = NULL, *includeStrand = Py_False;
 
-    if(!(PyArg_ParseTuple(args, "skkkkksO", &chrom, &lstart, &lend, &lstrand, &lmatchType, &lstrandType, &transcript_id, includeStrand))) {
+    if(!(PyArg_ParseTuple(args, "skkkkksO", &chrom, &lstart, &lend, &lstrand, &lmatchType, &lstrandType, &transcript_id, &includeStrand))) {
         PyErr_SetString(PyExc_RuntimeError, "pyFindOverlaps received an invalid or missing argument!");
         return NULL;
     }

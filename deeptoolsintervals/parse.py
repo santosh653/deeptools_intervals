@@ -112,7 +112,7 @@ class GTF(object):
     >>> gtf.findOverlaps("1", 12000, 20000, trimOverlap=True)
     [(12009, 13670, 'ENST00000450305', 'group 1', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)])]
     >>> gtf.findOverlaps("1", 1, 20000, numericGroups=True, includeStrand=True)
-    [(11868, 14409, 'ENST00000456328', 0, [(11868, 14409)], '+'), (12009, 13670, 'ENST00000450305', 0, [(12009, 13670)], '+'), (14403, 29570, 'ENST00000488147', 0, [(14403, 29570)], '+'), (17368, 17436, 'ENST00000619216', 1, [(17368, 17436)], '-')]
+    [(11868, 14409, 'ENST00000456328', 0, [(11868, 14409)], '+'), (12009, 13670, 'ENST00000450305', 0, [(12009, 13670)], '+'), (14403, 29570, 'ENST00000488147', 0, [(14403, 29570)], '-'), (17368, 17436, 'ENST00000619216', 1, [(17368, 17436)], '-')]
     """
 
     def firstNonComment(self, fp):
@@ -570,8 +570,6 @@ class GTF(object):
         if not overlaps:
             return None
 
-        strandList = ['+', '-', '', '.']
-
         for i, o in enumerate(overlaps):
             if o[2] not in self.exons.keys() or len(self.exons[o[2]]) == 0:
                 exons = [(o[0], o[1])]
@@ -584,7 +582,7 @@ class GTF(object):
                 overlaps[i] = (o[0], o[1], o[2], self.labels[o[3]], exons)
 
             if includeStrand:
-                overlaps[i] = overlaps[i] + (strandList[o[-1]],)
+                overlaps[i] = overlaps[i] + (o[-1],)
 
         # Ensure that the intervals are sorted by their 5'-most bound. This enables trimming
         overlaps = sorted(overlaps)
