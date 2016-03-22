@@ -582,7 +582,7 @@ class GTF(object):
                 overlaps[i] = (o[0], o[1], o[2], self.labels[o[3]], exons)
 
             if includeStrand:
-                overlaps[i] = overlaps[i] + (o[-1],)
+                overlaps[i] = overlaps[i] + (str(o[-1].decode("ascii")),)
 
         # Ensure that the intervals are sorted by their 5'-most bound. This enables trimming
         overlaps = sorted(overlaps)
