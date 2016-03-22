@@ -230,7 +230,7 @@ class GTF(object):
         >>> from os.path import dirname
         >>> gtf = parse.GTF("{0}/test/GRCh38.84.bed6".format(dirname(parse.__file__)), keepExons=True)
         >>> gtf.findOverlaps("1", 1, 20000)
-        [(11868, 14409, '1:11868-14409', 'group 1', [(11868, 14409)]), (12009, 13670, '1:12009-13670', 'group 1', [(12009, 13670)]), (14403, 29570, '1:14403-29570', 'group 1', [(14403, 29570)]), (17368, 17436, '1:17368-17436', 'group 1', [(17368, 17436)])]
+        [(11868, 14409, 'ENST00000456328.2', 'group 1', [(11868, 14409)]), (12009, 13670, 'ENST00000450305.2', 'group 1', [(12009, 13670)]), (14403, 29570, 'ENST00000488147.1', 'group 1', [(14403, 29570)]), (17368, 17436, 'ENST00000619216.1', 'group 1', [(17368, 17436)])]
         >>> gtf = parse.GTF("{0}/test/GRCh38.84.bed".format(dirname(parse.__file__)), keepExons=True, labels=["foo", "bar", "quux", "sniggly"])
         >>> gtf.findOverlaps("1", 1, 20000)
         [(11868, 14409, '1:11868-14409', 'foo', [(11868, 14409)]), (12009, 13670, '1:12009-13670', 'foo', [(12009, 13670)]), (14403, 29570, '1:14403-29570', 'foo', [(14403, 29570)]), (17368, 17436, '1:17368-17436', 'foo', [(17368, 17436)])]
@@ -271,6 +271,9 @@ class GTF(object):
                 if self.parseBEDcore(line, ncols):
                     groupEntries += 1
 
+        if startingIdx == 0:
+            # An annoying edge case
+            startingIdx = -1
         if groupLabelsFound == 0 or self.labelIdx - startingIdx + 1 > groupLabelsFound:
             # This can only happen once
             if self.defaultGroup is not None:
