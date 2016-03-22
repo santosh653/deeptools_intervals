@@ -237,7 +237,6 @@ class GTF(object):
         """
         groupLabelsFound = 0
         groupEntries = 0
-        startingIdx = self.labelIdx
 
         # Handle the first line
         if self.parseBEDcore(line, ncols):
@@ -271,11 +270,7 @@ class GTF(object):
                 if self.parseBEDcore(line, ncols):
                     groupEntries += 1
 
-        if startingIdx == 0:
-            # An annoying edge case
-            startingIdx = -1
-        if groupLabelsFound == 0 or self.labelIdx - startingIdx + 1 > groupLabelsFound:
-            # This can only happen once
+        if groupEntries > 0:
             if self.defaultGroup is not None:
                 self.labels.append(findRandomLabel(self.labels, self.defaultGroup))
             else:
