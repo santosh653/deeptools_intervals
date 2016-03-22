@@ -273,7 +273,10 @@ class GTF(object):
 
         if groupLabelsFound == 0 or self.labelIdx - startingIdx + 1 > groupLabelsFound:
             # This can only happen once
-            self.labels.append(findRandomLabel(self.labels, self.filename))
+            if self.defaultGroup is not None:
+                self.labels.append(findRandomLabel(self.labels, self.defaultGroup))
+            else:
+                self.labels.append(findRandomLabel(self.labels, self.filename))
             self.labelIdx += 1
 
     def parseGTFtranscript(self, cols, label):
@@ -291,6 +294,8 @@ class GTF(object):
         m = self.deepTools_group_regex.search(cols[8])
         if m:
             label = m.groups()[0]
+        elif self.defaultGroup is not None:
+            label = self.defaultGroup
 
         m = self.transcript_id_regex.search(cols[8])
         if not m:
@@ -391,7 +396,7 @@ class GTF(object):
         # Reset self.labelIdx
         self.labelIdx = len(self.labels) - 1
 
-    def __init__(self, fnames, exonID="exon", transcriptID="transcript", keepExons=False, labels=[], transcript_id_designator="transcript_id"):
+    def __init__(self, fnames, exonID="exon", transcriptID="transcript", keepExons=False, labels=[], transcript_id_designator="transcript_id", defaultGroup=None):
         """
         Driver function to actually parse files. The steps are as follows:
 
@@ -421,6 +426,7 @@ class GTF(object):
                       transcript_id_designator would need to be changed to
                       'gene_id' or 'gene_name' to extract the gene ID/name from
                       the attributes.
+        defaultGroup: The default group name. If None, the file name is used.
         """
         self.fname = []
         self.filename = ""
@@ -436,6 +442,7 @@ class GTF(object):
         self.exonID = exonID
         self.transcriptID = transcriptID
         self.keepExons = keepExons
+        self.defaultGroup = defaultGroup
 
         if labels != []:
             self.already_input_labels = True

@@ -85,7 +85,7 @@ Finding overlaps requires a chromosome, start, and end positions. As with BED fi
 
 This would search for intervals on the `+` strand (ignoring those on `.`, which would have additionally been returned had `strandType=1` been used) that are exactly [0, 100) on chromosome 1. Anyone interested in these more advanced overlap searching methods should look at the gtf.h file and the "libGTF" repository for examples.
 
-It's often the case the a function looking for intervals is doing so by first dividing the genome into chunks and then sending each chunk to a processor for subsequent analysis. In such cases, it's convenient to NOT have processor duplicate processing intervals that may overlap multiple genomic bins. In these circumstances, the `trimOverlaps` option can be set to `True`.
+It's often the case the a function looking for intervals is doing so by first dividing the genome into chunks and then sending each chunk to a processor for subsequent analysis. In such cases, it's convenient to NOT have processor duplicate processing intervals that may overlap multiple genomic bins. In these circumstances, the `trimOverlap` option can be set to `True`.
 
 The output of `findOverlaps()` is a list of tuples:
 
