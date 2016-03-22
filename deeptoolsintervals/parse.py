@@ -247,6 +247,10 @@ class GTF(object):
             if not isinstance(line, str):
                 line = line.decode('ascii')
             line = line.strip()
+            if len(line) == 0:
+                # Apparently this happens, some people seem to like trying to break things
+                continue
+
             if line.startswith("#"):
                 # If there was a previous group AND it had no entries then remove it
                 if groupLabelsFound > 0:
@@ -386,6 +390,9 @@ class GTF(object):
                 line = line.decode('ascii')
             if not line.startswith('#'):
                 cols = line.split("\t")
+                if len(cols) == 0:
+                    continue
+
                 if cols[2].lower() == self.transcriptID:
                     self.parseGTFtranscript(cols, file_label)
                 elif cols[2].lower() == self.exonID and self.keepExons is True:
