@@ -141,7 +141,7 @@ class GTF(object):
             sys.stderr.write("Warning, {0} has an abnormal number of fields. Assuming BED3 format.\n".format(self.filename))
             return 'BED3'
         elif len(cols) == 6:
-            return 'BED3'
+            return 'BED6'
         elif len(cols) == 9 and seemsLikeGTF(cols, self.gene_id_regex):
             return 'GTF'
         elif len(cols) == 12:
