@@ -92,18 +92,18 @@ The output of `findOverlaps()` is a list of tuples:
     from deeptoolsintervals import parse
     gtf = parse.GTF("foo.gtf", keepExons=True)
     gtf.findOverlaps("chr1", 1, 20000)
-    [(11868, 14409, 'ENST00000456328', 'group 1', [(11868, 12227), (12612, 12721), (13220, 14409)]), (12009, 13670, 'ENST00000450305', 'group 1', [(12009, 12057), (12178, 12227), (12612, 12697), (12974, 13052), (13220, 13374), (13452, 13670)]), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 14501), (15004, 15038), (15795, 15947), (16606, 16765), (16857, 17055), (17232, 17368), (17605, 17742), (17914, 18061), (18267, 18366), (24737, 24891), (29533, 29570)]), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)])]
+    [(11868, 14409, 'ENST00000456328', 'group 1', [(11868, 12227), (12612, 12721), (13220, 14409)], '.'), (12009, 13670, 'ENST00000450305', 'group 1', [(12009, 12057), (12178, 12227), (12612, 12697), (12974, 13052), (13220, 13374), (13452, 13670)], '.'), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 14501), (15004, 15038), (15795, 15947), (16606, 16765), (16857, 17055), (17232, 17368), (17605, 17742), (17914, 18061), (18267, 18366), (24737, 24891), (29533, 29570)], '.'), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)], '.')]
 
-Each tuple contains the following members (in order): 0-based starting position, 1-based end position, ID (the transcript ID for GTF files, column 4 for BED6/12 files and a string composed of the intervals for BED3 files), a group label, and a sorted list of exonic bounds. If either the input file type does not provide exonic bounds or `keepExons=True` was not used, these bounds will be identical to that in the tuple:
+Each tuple contains the following members (in order): 0-based starting position, 1-based end position, ID (the transcript ID for GTF files, column 4 for BED6/12 files and a string composed of the intervals for BED3 files), a group label, a sorted list of exonic bounds, and the score (column 4 in GTF files and 5 in BED files). If either the input file type does not provide exonic bounds or `keepExons=True` was not used, these bounds will be identical to that in the tuple:
 
     from deeptoolsintervals import parse
     gtf = parse.GTF("foo.gtf")
     gtf.findOverlaps("chr1", 1, 20000)
-    [(11868, 14409, 'ENST00000456328', 'group 1', [(11868, 14409)]), (12009, 13670, 'ENST00000450305', 'group 1', [(12009, 13670)]), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 29570)]), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)])]
+    [(11868, 14409, 'ENST00000456328', 'group 1', [(11868, 14409)], '.'), (12009, 13670, 'ENST00000450305', 'group 1', [(12009, 13670)], '.'), (14403, 29570, 'ENST00000488147', 'group 1', [(14403, 29570)], '.'), (17368, 17436, 'ENST00000619216', 'group 2', [(17368, 17436)], '.')]
 
 In some cases, it's desirable to have the group labels be numeric, since the regions may be used for further processing and the results sorted or grouped accordingly. The `numericGroups` argument can be used to facilitate this:
 
     from deeptoolsintervals import parse
     gtf = parse.GTF("foo.gtf")
     gtf.findOverlaps("chr1", 1, 20000, numericGroups=True)
-    [(11868, 14409, 'ENST00000456328', 0, [(11868, 14409)]), (12009, 13670, 'ENST00000450305', 0, [(12009, 13670)]), (14403, 29570, 'ENST00000488147', 0, [(14403, 29570)]), (17368, 17436, 'ENST00000619216', 1, [(17368, 17436)])]
+    [(11868, 14409, 'ENST00000456328', 0, [(11868, 14409)], '.'), (12009, 13670, 'ENST00000450305', 0, [(12009, 13670)], '.'), (14403, 29570, 'ENST00000488147', 0, [(14403, 29570)], '.'), (17368, 17436, 'ENST00000619216', 1, [(17368, 17436)], '.')]
