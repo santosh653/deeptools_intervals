@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 from deeptoolsintervals import tree
-from deeptoolsintervals.parse import GTF, openPossiblyCompressed, getNext
+from deeptoolsintervals.parse import GTF, openPossiblyCompressed
 import re
+import sys
 
 
 class Enrichment(GTF):
@@ -125,7 +126,7 @@ class Enrichment(GTF):
         Optional input is:
 
         keepExons:    For BED12 files, exons are ignored by default.
-        defaultFeature: The feature label used in BED files, 
+        defaultFeature: The feature label used in BED files
         """
         self.fname = []
         self.filename = ""
