@@ -49,7 +49,7 @@ class Enrichment(GTF):
 
         >>> from deeptoolsintervals import enrichment
         >>> from os.path import dirname
-        >>> gtf = enrichment.Enrichment("{0}/test/GRCh38.84.bed".format(dirname(parse.__file__)), keepExons=True)
+        >>> gtf = enrichment.Enrichment("{0}/test/GRCh38.84.bed".format(dirname(enrichment.__file__)), keepExons=True)
         >>> gtf.findOverlaps("1", [(1, 3000000)])
         frozenset(['peaks'])
         >>> gtf.findOverlaps("chr1", [(1, 3000000)])
@@ -77,6 +77,14 @@ class Enrichment(GTF):
             self.features.append(feature)
 
     def parseGTF(self, fp, line):
+        """
+        >>> from deeptoolsintervals import enrichment
+        >>> from os.path import dirname
+        >>> gtf = enrichment.Enrichment("{0}/test/GRCh38.84.gtf.gz".format(dirname(enrichment.__file__)), keepExons=True)
+        >>> o = gtf.findOverlaps("1", [(0, 2000000)])
+        >>> assert(o == frozenset(['start_codon', 'exon', 'stop_codon', 'CDS', 'gene', 'transcript']))
+        """
+
         # Handle the first line
         cols = line.split("\t")
 
