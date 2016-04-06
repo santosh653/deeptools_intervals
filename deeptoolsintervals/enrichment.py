@@ -50,10 +50,10 @@ class Enrichment(GTF):
         >>> from deeptoolsintervals import enrichment
         >>> from os.path import dirname
         >>> gtf = enrichment.Enrichment("{0}/test/GRCh38.84.bed".format(dirname(enrichment.__file__)), keepExons=True)
-        >>> gtf.findOverlaps("1", [(1, 3000000)])
-        frozenset(['peaks'])
-        >>> gtf.findOverlaps("chr1", [(1, 3000000)])
-        frozenset(['peaks'])
+        >>> o = gtf.findOverlaps("1", [(1, 3000000)])
+        >>> assert(o == frozenset(['peaks']))
+        >>> o = gtf.findOverlaps("chr1", [(1, 3000000)])
+        >>> assert(o == frozenset(['peaks']))
         """
 
         # Handle the first line

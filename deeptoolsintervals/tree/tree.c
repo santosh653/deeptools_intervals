@@ -24,7 +24,7 @@ char *PyString_AsString(PyObject *obj) {
 }
 
 PyObject *PyString_FromString(char *s) {
-    return PyBytes_FromString(s);
+    return PyUnicode_FromString(s);
 }
 #endif
 
