@@ -19,9 +19,12 @@ int PyString_Check(PyObject *obj) {
     return 0;
 }
 
-//I don't know what happens if PyBytes_AsString(NULL) is used...
 char *PyString_AsString(PyObject *obj) {
     return PyBytes_AsString(PyUnicode_AsASCIIString(obj));
+}
+
+PyObject *PyString_FromString(char *s) {
+    return PyBytes_FromString(s);
 }
 #endif
 
