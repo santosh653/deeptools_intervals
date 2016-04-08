@@ -223,7 +223,7 @@ class GTF(object):
             score = cols[4]
 
         # Ensure that the name is unique
-        if name in self.exons.keys():
+        if name in self.exons:
             sys.stderr.write("Skipping {0}, an entry by this name already exists!\n".format(name))
             return False
         else:
@@ -259,7 +259,7 @@ class GTF(object):
         >>> overlaps = gtf.findOverlaps("1", 1, 30000000)
         >>> labels = dict()
         >>> for o in overlaps:
-        ...     if basename(o[3]) not in labels.keys():
+        ...     if basename(o[3]) not in labels:
         ...         labels[basename(o[3])] = 0
         ...     labels[basename(o[3])] += 1
         >>> assert(labels['group 1'] == 4)
@@ -274,7 +274,7 @@ class GTF(object):
         >>> overlaps = gtf.findOverlaps("1", 1, 30000000)
         >>> labels = dict()
         >>> for o in overlaps:
-        ...     if basename(o[3]) not in labels.keys():
+        ...     if basename(o[3]) not in labels:
         ...         labels[basename(o[3])] = 0
         ...     labels[basename(o[3])] += 1
         >>> assert(labels['group 1'] == 8)
@@ -376,7 +376,7 @@ class GTF(object):
             return
 
         name = m.groups()[0]
-        if name in self.exons.keys():
+        if name in self.exons:
             sys.stderr.write("Warning: {0} occurs more than once! Only using the first instance.\n".format(name))
             self.transcriptIDduplicated.append(name)
             return
@@ -420,7 +420,7 @@ class GTF(object):
         name = m.groups()[0]
         if name in self.transcriptIDduplicated:
             return
-        if name not in self.exons.keys():
+        if name not in self.exons:
             self.exons[name] = []
 
         self.exons[name].append((int(cols[3]) - 1, int(cols[4])))
@@ -440,7 +440,7 @@ class GTF(object):
         >>> overlaps = gtf.findOverlaps("1", 1, 20000000)
         >>> labels = dict()
         >>> for o in overlaps:
-        ...     if basename(o[3]) not in labels.keys():
+        ...     if basename(o[3]) not in labels:
         ...         labels[basename(o[3])] = 0
         ...     labels[basename(o[3])] += 1
         >>> assert(labels['GRCh38.84.gtf.gz'] == 17)
@@ -453,7 +453,7 @@ class GTF(object):
         >>> overlaps = gtf.findOverlaps("1", 1, 20000000)
         >>> labels = dict()
         >>> for o in overlaps:
-        ...     if basename(o[3]) not in labels.keys():
+        ...     if basename(o[3]) not in labels:
         ...         labels[basename(o[3])] = 0
         ...     labels[basename(o[3])] += 1
         >>> assert(labels['GRCh38.84.gtf.gz'] == 17)
@@ -467,7 +467,7 @@ class GTF(object):
         >>> overlaps = gtf.findOverlaps("1", 1, 20000000)
         >>> labels = dict()
         >>> for o in overlaps:
-        ...     if basename(o[3]) not in labels.keys():
+        ...     if basename(o[3]) not in labels:
         ...         labels[basename(o[3])] = 0
         ...     labels[basename(o[3])] += 1
         >>> assert(labels['GRCh38.84.gtf.gz'] == 17)
@@ -640,7 +640,7 @@ class GTF(object):
         >>> overlaps = gtf.findOverlaps("1", 0, 3000000)
         >>> labels = dict()
         >>> for o in overlaps:
-        ...     if basename(o[3]) not in labels.keys():
+        ...     if basename(o[3]) not in labels:
         ...         labels[basename(o[3])] = 0
         ...     labels[basename(o[3])] += 1
         >>> assert(labels['GRCh38.84.bed2'] == 1)
@@ -674,7 +674,7 @@ class GTF(object):
             return None
 
         for i, o in enumerate(overlaps):
-            if o[2] not in self.exons.keys() or len(self.exons[o[2]]) == 0:
+            if o[2] not in self.exons or len(self.exons[o[2]]) == 0:
                 exons = [(o[0], o[1])]
             else:
                 exons = sorted(self.exons[o[2]])
