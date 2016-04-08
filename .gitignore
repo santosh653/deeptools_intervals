@@ -3,3 +3,4 @@ dist/
 deeptoolsintervals.egg-info/
 *.o
 *.a
+*.pyc
