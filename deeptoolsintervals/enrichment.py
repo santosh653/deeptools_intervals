@@ -2,9 +2,9 @@
 
 from deeptoolsintervals import tree
 from deeptoolsintervals.parse import GTF, openPossiblyCompressed
-import re
 import sys
 from os.path import basename
+import shlex
 
 
 class Enrichment(GTF):
@@ -110,9 +110,9 @@ class Enrichment(GTF):
             strand = 1
 
         feature = cols[2]
-        m = self.deepTools_group_regex.search(cols[8])
-        if m:
-            feature = m.groups()[0]
+        s = shlex.split(cols[8])
+        if "deepTools_group" in s and s[-1] != "deepTools_group":
+            feature = s[s.index("deepTools_group") + 1].rstrip(";")
 
         self.tree.addEnrichmentEntry(self.mungeChromosome(cols[0]), int(cols[3]) - 1, int(cols[4]), strand, cols[5], feature)
         if feature not in self.features:
@@ -134,9 +134,9 @@ class Enrichment(GTF):
                     strand = 1
 
                 feature = cols[2]
-                m = self.deepTools_group_regex.search(cols[8])
-                if m:
-                    feature = m.groups()[0]
+                s = shlex.split(cols[8])
+                if "deepTools_group" in s and s[-1] != "deepTools_group":
+                    feature = s[s.index("deepTools_group") + 1].rstrip(";")
 
                 self.tree.addEnrichmentEntry(self.mungeChromosome(cols[0]), int(cols[3]) - 1, int(cols[4]), strand, cols[5], feature)
                 if feature not in self.features:
@@ -168,8 +168,6 @@ class Enrichment(GTF):
         self.chroms = []
         self.features = []
         self.tree = tree.initTree()
-        self.gene_id_regex = re.compile('(?:gene_id (?:\"([ \w\d"\-\.]+)\"|([ \w\d"\-\.]+))[;|\r|\n])')
-        self.deepTools_group_regex = re.compile('(?:deepTools_group (?:\"([ \w\d"\-\.]+)\"|([ \w\d"\-\.]+))[;|\r|\n])')
         self.keepExons = keepExons
         self.verbose = verbose
 
