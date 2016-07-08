@@ -215,7 +215,10 @@ class GTF(object):
         cols = line.split("\t")
         name = "{0}:{1}-{2}".format(cols[0], cols[1], cols[2])
 
-        if int(cols[1]) >= int(cols[2]) or int(cols[1]) < 0:
+        if int(cols[1]) < 0:
+            cols[1] = 0
+
+        if int(cols[1]) >= int(cols[2]):
             sys.stderr.write("Warning: {0}:{1}-{2} is an invalid BED interval! Ignoring it.\n".format(cols[0], cols[1], cols[2]))
             return
 

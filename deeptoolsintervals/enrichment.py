@@ -16,7 +16,10 @@ class Enrichment(GTF):
         strand = 3
         cols = line.split("\t")
 
-        if int(cols[1]) >= int(cols[2]) or int(cols[1]) < 0:
+        if int(cols[1]) < 0:
+            cols[1] = 0
+
+        if int(cols[1]) >= int(cols[2]):
             sys.stderr.write("Warning: {0}:{1}-{2} is an invalid BED interval! Ignoring it.\n".format(cols[0], cols[1], cols[2]))
             return
 
