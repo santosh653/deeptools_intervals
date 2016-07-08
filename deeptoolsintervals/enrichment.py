@@ -109,9 +109,14 @@ class Enrichment(GTF):
         elif cols[6] == '-':
             strand = 1
 
-        self.tree.addEnrichmentEntry(self.mungeChromosome(cols[0]), int(cols[3]) - 1, int(cols[4]), strand, cols[5], cols[2])
-        if cols[2] not in self.features:
-            self.features.append(cols[2])
+        feature = cols[2]
+        m = self.deepTools_group_regex.search(cols[8])
+        if m:
+            feature = m.groups()[0]
+
+        self.tree.addEnrichmentEntry(self.mungeChromosome(cols[0]), int(cols[3]) - 1, int(cols[4]), strand, cols[5], feature)
+        if feature not in self.features:
+            self.features.append(feature)
 
         # Handle the remaining lines
         for line in fp:
@@ -128,9 +133,14 @@ class Enrichment(GTF):
                 elif cols[6] == '-':
                     strand = 1
 
-                self.tree.addEnrichmentEntry(self.mungeChromosome(cols[0]), int(cols[3]) - 1, int(cols[4]), strand, cols[5], cols[2])
-                if cols[2] not in self.features:
-                    self.features.append(cols[2])
+                feature = cols[2]
+                m = self.deepTools_group_regex.search(cols[8])
+                if m:
+                    feature = m.groups()[0]
+
+                self.tree.addEnrichmentEntry(self.mungeChromosome(cols[0]), int(cols[3]) - 1, int(cols[4]), strand, cols[5], feature)
+                if feature not in self.features:
+                    self.features.append(feature)
 
     def __init__(self, fnames, keepExons=False, labels=None, verbose=False):
         """
@@ -159,6 +169,7 @@ class Enrichment(GTF):
         self.features = []
         self.tree = tree.initTree()
         self.gene_id_regex = re.compile('(?:gene_id (?:\"([ \w\d"\-\.]+)\"|([ \w\d"\-\.]+))[;|\r|\n])')
+        self.deepTools_group_regex = re.compile('(?:deepTools_group (?:\"([ \w\d"\-\.]+)\"|([ \w\d"\-\.]+))[;|\r|\n])')
         self.keepExons = keepExons
         self.verbose = verbose
 
