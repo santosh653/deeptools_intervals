@@ -22,7 +22,7 @@ def getNext(fp):
     return line.decode('ascii')
 
 
-def seemsLikeGTF(cols, gene_id_descriptor):
+def seemsLikeGTF(cols):
     """
     Does a line look like it could be from a GTF file? Column contents must be:
 
@@ -42,8 +42,8 @@ def seemsLikeGTF(cols, gene_id_descriptor):
         if cols[7] != '.':
             int(cols[7]) in [0, 1, 2]
         s = shlex.split(cols[8])
-        assert(gene_id_descriptor in s)
-        assert(s[-1] != gene_id_descriptor)
+        assert("gene_id" in s)
+        assert(s[-1] != "gene_id")
         return True
     except:
         return False
