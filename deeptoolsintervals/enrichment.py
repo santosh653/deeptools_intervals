@@ -112,7 +112,7 @@ class Enrichment(GTF):
         feature = cols[2]
         s = shlex.split(cols[8])
         if "deepTools_group" in s and s[-1] != "deepTools_group":
-            feature = s[s.index("deepTools_group") + 1]
+            feature = s[s.index("deepTools_group") + 1].rstrip(";")
 
         self.tree.addEnrichmentEntry(self.mungeChromosome(cols[0]), int(cols[3]) - 1, int(cols[4]), strand, cols[5], feature)
         if feature not in self.features:
@@ -136,7 +136,7 @@ class Enrichment(GTF):
                 feature = cols[2]
                 s = shlex.split(cols[8])
                 if "deepTools_group" in s and s[-1] != "deepTools_group":
-                    feature = s[s.index("deepTools_group") + 1]
+                    feature = s[s.index("deepTools_group") + 1].rstrip(";")
 
                 self.tree.addEnrichmentEntry(self.mungeChromosome(cols[0]), int(cols[3]) - 1, int(cols[4]), strand, cols[5], feature)
                 if feature not in self.features:

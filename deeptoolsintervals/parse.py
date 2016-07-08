@@ -375,15 +375,13 @@ class GTF(object):
 
         s = shlex.split(cols[8])
         if "deepTools_group" in s and s[-1] != "deepTools_group":
-            label = s[s.index("deepTools_group") + 1]
-        else:
-            label = self.defaultGroup
+            label = s[s.index("deepTools_group") + 1].rstrip(";")
 
-        if self.transcript_id_designator in s and s[-1] != s.transcript_id_designator:
+        if self.transcript_id_designator not in s or s[-1] == self.transcript_id_designator:
             sys.stderr.write("Warning: {0} is malformed!\n".format("\t".join(cols)))
             return
 
-        name = s[s.index(s.transcript_id_designator) + 1]
+        name = s[s.index(self.transcript_id_designator) + 1].rstrip(";")
         if name in self.exons:
             sys.stderr.write("Warning: {0} occurs more than once! Only using the first instance.\n".format(name))
             self.transcriptIDduplicated.append(name)
@@ -421,11 +419,11 @@ class GTF(object):
             return
 
         s = shlex.split(cols[8])
-        if self.transcript_id_designator in s and s[-1] != s.transcript_id_designator:
+        if self.transcript_id_designator not in s or s[-1] == self.transcript_id_designator:
             sys.stderr.write("Warning: {0} is malformed!\n".format("\t".join(cols)))
             return
 
-        name = s[s.index(s.transcript_id_designator) + 1]
+        name = s[s.index(self.transcript_id_designator) + 1].rstrip(";")
         if name in self.transcriptIDduplicated:
             return
         if name not in self.exons:
