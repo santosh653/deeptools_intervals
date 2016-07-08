@@ -97,7 +97,7 @@ class Enrichment(GTF):
         >>> from os.path import dirname
         >>> gtf = enrichment.Enrichment("{0}/test/GRCh38.84.gtf.gz".format(dirname(enrichment.__file__)), keepExons=True)
         >>> o = gtf.findOverlaps("1", [(0, 2000000)])
-        >>> assert(o == frozenset(['start_codon', 'exon', 'stop_codon', 'CDS', 'gene', 'transcript']))
+        >>> assert(o == frozenset(['start_codon', 'exon', 'stop_codon', 'CDS', 'gene', 'transcript', 'group 1', 'group 2']))
         """
 
         # Handle the first line
