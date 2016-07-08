@@ -160,7 +160,8 @@ class GTF(object):
         elif len(cols) - subtract == 3:
             return 'BED3'
         elif len(cols) - subtract < 6:
-            sys.stderr.write("Warning, {0} has an abnormal number of fields. Assuming BED3 format.\n".format(self.filename))
+            if self.verbose:
+                sys.stderr.write("Warning, {0} has an abnormal number of fields. Assuming BED3 format.\n".format(self.filename))
             return 'BED3'
         elif len(cols) - subtract == 6:
             return 'BED6'
@@ -169,10 +170,12 @@ class GTF(object):
         elif len(cols) - subtract == 12:
             return 'BED12'
         elif len(cols) - subtract < 12:
-            sys.stderr.write("Warning, {0} has an abnormal format. Assuming BED6 format.\n".format(self.filename))
+            if self.verbose:
+                sys.stderr.write("Warning, {0} has an abnormal format. Assuming BED6 format.\n".format(self.filename))
             return 'BED6'
         else:
-            sys.stderr.write("Warning, {0} has an abnormal format. Assuming BED12 format.\n".format(self.filename))
+            if self.verbose:
+                sys.stderr.write("Warning, {0} has an abnormal format. Assuming BED12 format.\n".format(self.filename))
             return 'BED12'
 
     def mungeChromosome(self, chrom, append=True):
@@ -504,7 +507,7 @@ class GTF(object):
         # Reset self.labelIdx
         self.labelIdx = len(self.labels)
 
-    def __init__(self, fnames, exonID="exon", transcriptID="transcript", keepExons=False, labels=[], transcript_id_designator="transcript_id", defaultGroup=None):
+    def __init__(self, fnames, exonID="exon", transcriptID="transcript", keepExons=False, labels=[], transcript_id_designator="transcript_id", defaultGroup=None, verbose=False):
         """
         Driver function to actually parse files. The steps are as follows:
 
@@ -535,6 +538,7 @@ class GTF(object):
                       'gene_id' or 'gene_name' to extract the gene ID/name from
                       the attributes.
         defaultGroup: The default group name. If None, the file name is used.
+        verbose:      Whether to produce warning messages (default: False)
         """
         self.fname = []
         self.filename = ""
@@ -551,6 +555,7 @@ class GTF(object):
         self.transcriptID = transcriptID
         self.keepExons = keepExons
         self.defaultGroup = defaultGroup
+        self.verbose = verbose
 
         if labels != []:
             self.already_input_labels = True
