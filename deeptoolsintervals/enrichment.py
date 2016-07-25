@@ -111,7 +111,7 @@ class Enrichment(GTF):
 
         feature = cols[2]
         if "deepTools_group" in cols[8]:
-            s = csv.reader([cols[8]], delimiter=' ')
+            s = csv.reader([cols[8]], delimiter=' ').next()
             if s[-1] != "deepTools_group":
                 feature = s[s.index("deepTools_group") + 1].rstrip(";")
 
@@ -136,7 +136,7 @@ class Enrichment(GTF):
 
                 feature = cols[2]
                 if "deepTools_group" in cols[8]:
-                    s = shlex.split(cols[8])
+                    s = csv.reader([cols[8]], delimiter=" ").next()
                     if s[-1] != "deepTools_group":
                         feature = s[s.index("deepTools_group") + 1].rstrip(";")
 
