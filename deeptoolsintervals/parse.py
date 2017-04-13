@@ -94,14 +94,19 @@ def openPossiblyCompressed(fname):
     """
     A wrapper to open gzip/bzip/uncompressed files
     """
-    with open(fname, "rb") as f:
+    mode = "rU"
+    modeb = "rbU"
+    if sys.version_info[0] >= 3:
+        mode = "r"
+        modeb = "rb"
+    with open(fname, mode + "b") as f:
         first3 = bytes(f.read(3))
     if first3 == b"\x1f\x8b\x08":
-        return gzip.open(fname, "rbU")
+        return gzip.open(fname, modeb)
     elif first3 == b"\x42\x5a\x68" and supportsBZ2:
-        return bz2.BZ2File(fname, "rbU")
+        return bz2.BZ2File(fname, modeb)
     else:
-        return open(fname, "rU")
+        return open(fname, mode)
 
 
 def getLabel(line):
