@@ -97,11 +97,11 @@ def openPossiblyCompressed(fname):
     with open(fname, "rb") as f:
         first3 = bytes(f.read(3))
     if first3 == b"\x1f\x8b\x08":
-        return gzip.open(fname, "rb")
+        return gzip.open(fname, "rbU")
     elif first3 == b"\x42\x5a\x68" and supportsBZ2:
-        return bz2.BZ2File(fname, "rb")
+        return bz2.BZ2File(fname, "rbU")
     else:
-        return open(fname)
+        return open(fname, "rU")
 
 
 def getLabel(line):
