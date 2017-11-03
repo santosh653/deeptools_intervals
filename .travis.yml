@@ -1,15 +1,26 @@
 language: "python"
-python:
-  - "2.7"
-  - "3.5"
-  - "3.6"
+env:
+  - TRAVIS_PYTHON_VERSION=2.7
+  - TRAVIS_PYTHON_VERSION=3.5
+  - TRAVIS_PYTHON_VERSION=3.6
 os:
   - linux
   - osx
 
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]] ; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -o miniconda.sh ; fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda config --add channels conda-forge
+  - conda update -q conda
+  - conda info -a
+
 install:
+  - conda install --yes -c conda-forge PYTHON=$TRAVIS_PYTHON_VERSION flake8 nose
   - python ./setup.py install
-  - pip install flake8
 
 script: 
   - flake8 . --exclude=build,deeptoolsintervals/__init__.py --ignore=E501,F403,E40,E722
