@@ -728,7 +728,7 @@ class GTF(object):
         return overlaps
 
     def hasOverlaps(self):
-        """    
+        """
         Returns True if ANY intervals in the tree overlap each other, regardless of strand.
 
         >>> from deeptoolsintervals import parse
@@ -737,5 +737,5 @@ class GTF(object):
         >>> assert(gtf.hasOverlaps())
         >>> gtf = parse.GTF(["{0}/test/noOverlaps.bed".format(dirname(parse.__file__))])
         >>> assert(not gtf.hasOverlaps())
-        """    
+        """
         return self.tree.hasOverlaps()
