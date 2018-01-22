@@ -741,6 +741,8 @@ class GTF(object):
         >>> assert(gtf.hasOverlaps(returnDistance=True) == (True, 0))
         >>> gtf = parse.GTF(["{0}/test/noOverlaps.bed".format(dirname(parse.__file__))])
         >>> assert(not gtf.hasOverlaps())
+        >>> gtf = parse.GTF(["{0}/test/noOverlaps.bed".format(dirname(parse.__file__))])
+        >>> assert(gtf.hasOverlaps(returnDistance=True) == (False, 9))
         """
         rv = self.tree.hasOverlaps()
         if returnDistance:
