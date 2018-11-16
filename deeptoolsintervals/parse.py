@@ -670,6 +670,25 @@ class GTF(object):
         >>> assert(labels['group 3'] == 7)
         >>> assert(labels['group 1'] == 6)
         >>> assert(labels['group 1_r1'] == 4)
+        >>> gtf = parse.GTF("{0}/test/strands.bed".format(dirname(parse.__file__)))
+        >>> o = gtf.findOverlaps("1", 0, 3000, strand="+", includeStrand=True, strandType=0)  # ignore strand
+        >>> assert(o == [(0, 1000, 'first', 'strands.bed', [(0, 1000)], '+', 0.0), (1000, 2000, 'second', 'strands.bed', [(1000, 2000)], '-', 0.0), (2000, 3000, 'third', 'strands.bed', [(2000, 3000)], '.', 0.0)])
+        >>> o = gtf.findOverlaps("1", 0, 3000, strand="+", includeStrand=True, strandType=1)  # same strand
+        >>> assert(o == [(0, 1000, 'first', 'strands.bed', [(0, 1000)], '+', 0.0), (2000, 3000, 'third', 'strands.bed', [(2000, 3000)], '.', 0.0)])
+        >>> o = gtf.findOverlaps("1", 0, 3000, strand="+", includeStrand=True, strandType=2)  # opposite strand
+        >>> assert(o == [(1000, 2000, 'second', 'strands.bed', [(1000, 2000)], '-', 0.0), (2000, 3000, 'third', 'strands.bed', [(2000, 3000)], '.', 0.0)])
+        >>> o = gtf.findOverlaps("1", 0, 3000, strand="+", includeStrand=True, strandType=3)  # exact same strand
+        >>> assert(o == [(0, 1000, 'first', 'strands.bed', [(0, 1000)], '+', 0.0)])
+        >>> o = gtf.findOverlaps("1", 0, 3000, strand="-", includeStrand=True, strandType=0)  # ignore strand
+        >>> assert(o == [(0, 1000, 'first', 'strands.bed', [(0, 1000)], '+', 0.0), (1000, 2000, 'second', 'strands.bed', [(1000, 2000)], '-', 0.0), (2000, 3000, 'third', 'strands.bed', [(2000, 3000)], '.', 0.0)])
+        >>> o = gtf.findOverlaps("1", 0, 3000, strand="-", includeStrand=True, strandType=1)  # same strand
+        >>> assert(o == [(1000, 2000, 'second', 'strands.bed', [(1000, 2000)], '-', 0.0), (2000, 3000, 'third', 'strands.bed', [(2000, 3000)], '.', 0.0)])
+        >>> o = gtf.findOverlaps("1", 0, 3000, strand="-", includeStrand=True, strandType=2)  # opposite strand
+        >>> assert(o == [(0, 1000, 'first', 'strands.bed', [(0, 1000)], '+', 0.0), (2000, 3000, 'third', 'strands.bed', [(2000, 3000)], '.', 0.0)])
+        >>> o = gtf.findOverlaps("1", 0, 3000, strand="-", includeStrand=True, strandType=3)  # exact same strand
+        >>> assert(o == [(1000, 2000, 'second', 'strands.bed', [(1000, 2000)], '-', 0.0)])
+        >>> o = gtf.findOverlaps("1", 0, 3000, strand=".", includeStrand=True, strandType=3)  # same strand
+        >>> assert(o == [(2000, 3000, 'third', 'strands.bed', [(2000, 3000)], '.', 0.0)])
         """
         chrom = self.mungeChromosome(chrom, append=False)
         if not chrom:
@@ -684,11 +703,11 @@ class GTF(object):
 
         # Convert the strand to a number
         if strand == '+':
-            strand = 1
-        elif strand == '-':
-            strand = 2
-        else:
             strand = 0
+        elif strand == '-':
+            strand = 1
+        else:
+            strand = 3
 
         overlaps = self.tree.findOverlaps(chrom, start, end, strand, matchType, strandType, "transcript_id", includeStrand)
         if overlaps is None:
