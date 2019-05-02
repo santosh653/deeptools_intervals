@@ -119,9 +119,9 @@ class Enrichment(GTF):
         if self.attributeTag:
             feature = "None"
             if self.attributeTag in cols[8]:
-            s = next(csv.reader([cols[8]], delimiter=' '))
-            if s[-1] != self.attributeTag:
-                feature = s[s.index(self.attributeTag) + 1].rstrip(";")
+                s = next(csv.reader([cols[8]], delimiter=' '))
+                if s[-1] != self.attributeTag:
+                    feature = s[s.index(self.attributeTag) + 1].rstrip(";")
         if "deepTools_group" in cols[8]:
             s = next(csv.reader([cols[8]], delimiter=' '))
             if s[-1] != "deepTools_group":
