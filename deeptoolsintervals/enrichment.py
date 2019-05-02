@@ -89,8 +89,6 @@ class Enrichment(GTF):
                     cols = line.split("\t")
                     feature = cols.pop(labelColumn)
                     line = "\t".join(cols)
-                if self.gene_biotype:
-                    feature = "None"
                 self.parseBEDcore(line, ncols, feature)
 
             if feature not in self.features:
