@@ -102,6 +102,8 @@ class Enrichment(GTF):
         >>> o = gtf.findOverlaps("1", [(0, 2000000)])
         >>> assert(o == frozenset(['start_codon', 'exon', 'stop_codon', 'CDS', 'gene', 'transcript', 'group 1', 'group 2']))
         >>> gtf = enrichment.Enrichment("{0}/test/GRCh38.84.gtf.gz".format(dirname(enrichment.__file__)), keepExons=True, attributeTag="gene_biotype")
+        >>> o = gtf.findOverlaps("1", [(0, 2000000)])
+        >>> assert(o == frozenset(['miRNA', 'group 1', 'group 2', 'transcribed_unprocessed_pseudogene', 'processed_pseudogene', 'lincRNA', 'unprocessed_pseudogene', 'protein_coding']))
         """
 
         # Handle the first line
@@ -145,6 +147,12 @@ class Enrichment(GTF):
                     strand = 1
 
                 feature = cols[2]
+                if self.attributeTag:
+                    feature = "None"
+                    if self.attributeTag in cols[8]:
+                        s = next(csv.reader([cols[8]], delimiter=' '))
+                        if s[-1] != self.attributeTag:
+                            feature = s[s.index(self.attributeTag) + 1].rstrip(";")
                 if "deepTools_group" in cols[8]:
                     s = next(csv.reader([cols[8]], delimiter=" "))
                     if s[-1] != "deepTools_group":
@@ -171,9 +179,10 @@ class Enrichment(GTF):
         Optional input is:
 
         keepExons:    For BED12 files, exons are ignored by default.
-        attributeTag: If specified, ignore the "feature" column and instead parse the value of 
-                      the given attribute key. This can be used to allow computing overlaps of 
+        attributeTag: If specified, ignore the "feature" column and instead parse the value of
+                      the given attribute key. This can be used to allow computing overlaps of
                       gene_biotype and other generic tags. If the tag is missing, "None" is used.
+                      Note that the presence of a deepTools_group tag will always override this!
         labels:       Override the feature labels supplied in the file(s).
                       Note that this might instead be replaced later in the .features attribute.
         verbose:      Whether to print warnings (default: False)
@@ -207,16 +216,15 @@ class Enrichment(GTF):
                 bname = labels[labelIdx]
             else:
                 bname = basename(fname)
-            if attributeTag:
-                feature = "None"
+            feature = "None" if attributeTag is not None else bname
             if ftype == 'GTF':
                 self.parseGTF(fp, line)
             elif ftype == 'BED3':
-                self.parseBED(fp, line, 3, feature=bname, labelColumn=labelColumn)
+                self.parseBED(fp, line, 3, feature=feature, labelColumn=labelColumn)
             elif ftype == 'BED6':
-                self.parseBED(fp, line, 6, feature=bname, labelColumn=labelColumn)
+                self.parseBED(fp, line, 6, feature=feature, labelColumn=labelColumn)
             else:
-                self.parseBED(fp, line, 12, feature=bname, labelColumn=labelColumn)
+                self.parseBED(fp, line, 12, feature=feature, labelColumn=labelColumn)
             fp.close()
 
         # Sanity check
