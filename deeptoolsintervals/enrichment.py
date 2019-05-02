@@ -59,6 +59,9 @@ class Enrichment(GTF):
         >>> assert(o == frozenset(['GRCh38.84.bed']))
         >>> o = gtf.findOverlaps("chr1", [(1, 3000000)])
         >>> assert(o == frozenset(['GRCh38.84.bed']))
+        >>> gtf = enrichment.Enrichment("{0}/test/GRCh38.84.bed".format(dirname(enrichment.__file__)), keepExons=True, attributeTag="gene_biotype")
+        >>> o = gtf.findOverlaps("1", [(1, 3000000)])
+        >>> assert(o == frozenset(['None']))
         """
 
         # Handle the first line
@@ -86,6 +89,8 @@ class Enrichment(GTF):
                     cols = line.split("\t")
                     feature = cols.pop(labelColumn)
                     line = "\t".join(cols)
+                if self.gene_biotype:
+                    feature = "None"
                 self.parseBEDcore(line, ncols, feature)
 
             if feature not in self.features:
@@ -98,6 +103,7 @@ class Enrichment(GTF):
         >>> gtf = enrichment.Enrichment("{0}/test/GRCh38.84.gtf.gz".format(dirname(enrichment.__file__)), keepExons=True)
         >>> o = gtf.findOverlaps("1", [(0, 2000000)])
         >>> assert(o == frozenset(['start_codon', 'exon', 'stop_codon', 'CDS', 'gene', 'transcript', 'group 1', 'group 2']))
+        >>> gtf = enrichment.Enrichment("{0}/test/GRCh38.84.gtf.gz".format(dirname(enrichment.__file__)), keepExons=True, attributeTag="gene_biotype")
         """
 
         # Handle the first line
@@ -110,6 +116,12 @@ class Enrichment(GTF):
             strand = 1
 
         feature = cols[2]
+        if self.attributeTag:
+            feature = "None"
+            if self.attributeTag in cols[8]:
+            s = next(csv.reader([cols[8]], delimiter=' '))
+            if s[-1] != self.attributeTag:
+                feature = s[s.index(self.attributeTag) + 1].rstrip(";")
         if "deepTools_group" in cols[8]:
             s = next(csv.reader([cols[8]], delimiter=' '))
             if s[-1] != "deepTools_group":
@@ -144,7 +156,7 @@ class Enrichment(GTF):
                 if feature not in self.features:
                     self.features.append(feature)
 
-    def __init__(self, fnames, keepExons=False, labels=None, verbose=False):
+    def __init__(self, fnames, keepExons=False, attributeTag=None, labels=None, verbose=False):
         """
         Driver function to actually parse files. The steps are as follows:
 
@@ -161,6 +173,9 @@ class Enrichment(GTF):
         Optional input is:
 
         keepExons:    For BED12 files, exons are ignored by default.
+        attributeTag: If specified, ignore the "feature" column and instead parse the value of 
+                      the given attribute key. This can be used to allow computing overlaps of 
+                      gene_biotype and other generic tags. If the tag is missing, "None" is used.
         labels:       Override the feature labels supplied in the file(s).
                       Note that this might instead be replaced later in the .features attribute.
         verbose:      Whether to print warnings (default: False)
@@ -172,6 +187,7 @@ class Enrichment(GTF):
         self.tree = tree.initTree()
         self.keepExons = keepExons
         self.verbose = verbose
+        self.attributeTag = attributeTag
 
         if not isinstance(fnames, list):
             fnames = [fnames]
@@ -193,6 +209,8 @@ class Enrichment(GTF):
                 bname = labels[labelIdx]
             else:
                 bname = basename(fname)
+            if attributeTag:
+                feature = "None"
             if ftype == 'GTF':
                 self.parseGTF(fp, line)
             elif ftype == 'BED3':
