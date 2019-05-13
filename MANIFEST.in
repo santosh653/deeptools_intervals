@@ -1,6 +1,6 @@
 include README.md setup.py
 include deeptoolsintervals/tree.*
-exclude deeptoolsintervals/tree/*.c
-exclude deeptoolsintervals/tree/*.h
-exclude deeptoolsintervals/*.py
+include deeptoolsintervals/tree/*.c
+include deeptoolsintervals/tree/*.h
+include deeptoolsintervals/*.py
 include deeptoolsintervals/test/*
