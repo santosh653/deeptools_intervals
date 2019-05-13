@@ -20,6 +20,7 @@ before_install:
 install:
   - conda install --yes -c conda-forge PYTHON=$TRAVIS_PYTHON_VERSION flake8 nose
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then conda install -c conda-forge --yes libcxx libcxxabi cctools clang clang_osx-64 compiler-rt ld64 llvm llvm-lto-tapi ; fi
+  - conda init bash
   - conda activate base
   - python ./setup.py install
 
