@@ -136,3 +136,12 @@ Finding overlaps of an `Enrichment` object is similar to that with a `GTF` objec
     frozenset(['start_codon', 'transcript', 'gene', 'exon', 'CDS'])
 
 The output is a set containing all overlapped feature types. This is convenient for quick summarization.
+
+## Enrichment of custom attributes
+
+As of deeptoolsintervals 0.1.8, the `Enrichment` class is able to use a custom attribute key instead of the feature type. This allows you to find overlaps of things like the gene biotype:
+
+    >>> from deeptoolsintervals import Enrichment
+    >>> gtf = Enrichment("GRCh38.84.gtf.gz", keepExons=True, attributeKey="gene_biotype")
+    >>> gtf.findOverlaps("1", [(0, 2000000)])
+    frozenset(['miRNA', 'group 1', 'group 2', 'transcribed_unprocessed_pseudogene', 'processed_pseudogene', 'lincRNA', 'unprocessed_pseudogene', 'protein_coding']))

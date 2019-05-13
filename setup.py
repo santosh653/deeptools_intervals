@@ -26,7 +26,7 @@ module1 = Extension('deeptoolsintervals.tree',
                     include_dirs=[sysconfig.get_config_var("INCLUDEPY")])
 
 setup(name='deeptoolsintervals',
-      version='0.1.7',
+      version='0.1.8',
       description='A python module creating/accessing GTF-based interval trees with associated meta-data',
       author="Devon P. Ryan",
       author_email="ryan@ie-freiburg.mpg.de",
